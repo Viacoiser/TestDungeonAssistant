@@ -4,6 +4,7 @@ import { authAPI } from '../services/api'
 import { useAuthStore } from '../store/useAuthStore'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mail, Lock, ArrowRight, Shield, User, KeyRound } from 'lucide-react'
+import bgDungeon from '../assets/bg_dungeon.png'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -99,7 +100,7 @@ export default function Login() {
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 1.5 }}
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url('/bg_welcome.png')` }}
+        style={{ backgroundImage: `url(${bgDungeon})` }}
       >
         <div className="absolute inset-0 bg-black/70 backdrop-blur-[3px]" />
       </motion.div>

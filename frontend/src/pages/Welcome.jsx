@@ -1,5 +1,6 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
+import bgDungeon from '../assets/bg_dungeon.png'
 
 /* ─── Fire keyframes injected once into the document head ─── */
 const FIRE_STYLES = `
@@ -171,7 +172,7 @@ export default function Welcome() {
     <div className="relative w-full h-screen overflow-hidden bg-black">
       {/* Background image — object-contain para evitar zoom/recorte */}
       <img
-        src="/bg_welcome.png"
+        src={bgDungeon}
         alt="Dungeon Background"
         className="absolute inset-0 w-full h-full"
         style={{ objectFit: 'cover', objectPosition: 'center center' }}

@@ -18,6 +18,7 @@ DungeonAssistant/
 │   └── requirements.txt
 ├── frontend/            # React + Vite
 │   ├── src/
+│   │   ├── assets/      # Imagenes y media optimizados
 │   │   ├── pages/       # Componentes de pagina
 │   │   ├── components/  # Componentes reutilizables
 │   │   ├── store/       # Zustand stores
