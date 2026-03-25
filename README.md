@@ -1,24 +1,24 @@
-# DungeonAssistant 🐉
+# DungeonAssistant
 
-Ecosistema Inteligente de Gestión RPG - PWA mobile-first para campañas D&D 5e con IA
+Ecosistema Inteligente de Gestion RPG - PWA mobile-first para campanas D&D 5e con IA
 
-## 📋 Proyecto
+## Proyecto
 
-[Ver especificación completa](./DungeonAssistant_BuildPrompt_v2.md)
+[Ver especificacion completa](./DungeonAssistant_BuildPrompt_v2.md)
 
-## 🏗️ Estructura
+## Estructura
 
 ```
 DungeonAssistant/
 ├── backend/              # Python FastAPI
 │   ├── routers/         # Endpoints
-│   ├── services/        # Lógica de negocio
+│   ├── services/        # Logica de negocio
 │   ├── models/          # Pydantic schemas
 │   ├── main.py          # App principal
 │   └── requirements.txt
 ├── frontend/            # React + Vite
 │   ├── src/
-│   │   ├── pages/       # Componentes de página
+│   │   ├── pages/       # Componentes de pagina
 │   │   ├── components/  # Componentes reutilizables
 │   │   ├── store/       # Zustand stores
 │   │   ├── services/    # API, Socket.io, Speech
@@ -30,7 +30,7 @@ DungeonAssistant/
 └── README.md
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Backend
 ```bash
@@ -59,7 +59,7 @@ cp .env.example .env
 npm run dev
 ```
 
-## 🔧 Stack Tecnológico
+## Stack Tecnologico
 
 ### Frontend
 - React 18 + Vite
@@ -76,22 +76,22 @@ npm run dev
 - Socket.io (WebSockets)
 
 ### Datos & IA
-- PostgreSQL vía Supabase
+- PostgreSQL via Supabase
 - Google Gemini API
 - Gemini Vision (OCR)
 - dnd5eapi.co
 
-## 📱 Features
+## Features
 
-✅ Autenticación sin roles globales (roles por campaña)
-✅ Gestión de personajes con validación D&D 5e
-✅ OCR de hojas físicas con Gemini Vision
-✅ Generador de NPCs con RAG
-✅ Asistente conversacional
-✅ Entrada de voz (Web Speech API)
-✅ Sincronización en tiempo real (Socket.io)
-✅ PWA con offline support
+- Autenticacion sin roles globales (roles por campana)
+- Gestion de personajes con validacion D&D 5e
+- OCR de hojas fisicas con Gemini Vision
+- Generador de NPCs con RAG
+- Asistente conversacional
+- Entrada de voz (Web Speech API)
+- Sincronizacion en tiempo real (Socket.io)
+- PWA con offline support
 
-## 📝 Estado
+## Estado
 
-Construcción en progreso - Fase 1: Setup base
+Construccion en progreso - Fase 1: Setup base
