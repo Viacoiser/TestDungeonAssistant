@@ -62,6 +62,8 @@ export const characterAPI = {
 export const sessionAPI = {
   create: (campaignId, sessionNumber, title) =>
     api.post('/sessions', { campaign_id: campaignId, session_number: sessionNumber, title }),
+  listByCampaign: (campaignId) =>
+    api.get(`/sessions/campaign/${campaignId}`),
   start: (sessionId) =>
     api.post(`/sessions/${sessionId}/start`),
   end: (sessionId) =>

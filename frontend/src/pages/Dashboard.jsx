@@ -167,7 +167,10 @@ export default function Dashboard() {
                   {campaign.member_count || 1} miembro{campaign.member_count !== 1 ? 's' : ''}
                 </div>
 
-                <button className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded transition duration-200">
+                <button
+                  onClick={() => navigate(`/campaign/${campaign.id}`)}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded transition duration-200"
+                >
                   Entrar a Campaña
                 </button>
               </div>

@@ -98,10 +98,19 @@ async def list_campaigns(current_user: dict = Depends(get_current_user)):
 
 
 @router.get("/{campaign_id}")
-async def get_campaign(campaign_id: str):
+async def get_campaign(campaign_id: str, current_user: dict = Depends(get_current_user)):
     """Obtener detalle de campaña"""
-    # TODO: Implementar detalle
-    return {"campaign_id": campaign_id}
+    try:
+        supabase = get_supabase()
+        result = supabase.client.table("campaigns") \
+            .select("*") \
+            .eq("id", campaign_id) \
+            .single() \
+            .execute()
+        return result.data
+    except Exception as e:
+        logger.error(f"❌ Error obteniendo campaña: {e}")
+        raise HTTPException(status_code=404, detail="Campaña no encontrada")
 
 
 @router.post("/{campaign_id}/join")
@@ -139,18 +148,80 @@ async def approve_role_request(campaign_id: str, req_id: str, approved: bool):
     return {"message": "Solicitud procesada", "approved": approved}
 
 
+class NpcGenerateRequest(BaseModel):
+    prompt: str
+
+
 @router.post("/{campaign_id}/npcs")
-async def generate_npc(campaign_id: str, prompt: str):
-    """Generar NPC con IA"""
-    # TODO: Implementar generación con Gemini
-    return {"message": "NPC generado"}
+async def generate_npc(
+    campaign_id: str,
+    data: NpcGenerateRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Generar NPC con IA y guardarlo en BD"""
+    try:
+        supabase = get_supabase()
+        from services.gemini import GeminiService
+        gemini = GeminiService()
+
+        # Obtener contexto de la campaña para el NPC
+        campaign_result = supabase.client.table("campaigns") \
+            .select("name, lore_summary") \
+            .eq("id", campaign_id) \
+            .single() \
+            .execute()
+        campaign = campaign_result.data or {}
+
+        npcs_result = supabase.client.table("npcs") \
+            .select("name") \
+            .eq("campaign_id", campaign_id) \
+            .execute()
+
+        context = {
+            "campaign_name": campaign.get("name", ""),
+            "lore_summary": campaign.get("lore_summary", ""),
+            "npcs": npcs_result.data or []
+        }
+
+        # Generar NPC con Gemini
+        npc_data = await gemini.generate_npc(context, data.prompt)
+
+        # Guardar en BD
+        insert_result = supabase.client.table("npcs").insert({
+            "campaign_id": campaign_id,
+            "name": npc_data.get("name", "NPC"),
+            "race": npc_data.get("race", ""),
+            "personality": npc_data.get("personality", ""),
+            "secrets": npc_data.get("secrets", ""),
+            "relationship_to_party": npc_data.get("relationship_to_party", "neutral"),
+            "stats": npc_data.get("stats", {}),
+            "is_alive": True,
+            "generated_by_ai": True
+        }).execute()
+
+        saved_npc = insert_result.data[0] if insert_result.data else npc_data
+        logger.info(f"✅ NPC generado y guardado: {npc_data.get('name')}")
+        return saved_npc
+
+    except Exception as e:
+        logger.error(f"❌ Error generando NPC: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/{campaign_id}/npcs")
-async def list_npcs(campaign_id: str):
+async def list_npcs(campaign_id: str, current_user: dict = Depends(get_current_user)):
     """Listar NPCs de campaña"""
-    # TODO: Implementar listado
-    return {"npcs": []}
+    try:
+        supabase = get_supabase()
+        result = supabase.client.table("npcs") \
+            .select("*") \
+            .eq("campaign_id", campaign_id) \
+            .order("created_at", desc=False) \
+            .execute()
+        return result.data or []
+    except Exception as e:
+        logger.error(f"❌ Error listando NPCs: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/{campaign_id}/factions")
