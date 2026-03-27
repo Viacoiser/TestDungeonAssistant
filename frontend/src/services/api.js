@@ -72,6 +72,8 @@ export const sessionAPI = {
     api.post(`/sessions/${sessionId}/notes`, { content }),
   getNotes: (sessionId) =>
     api.get(`/sessions/${sessionId}/notes`),
+  delete: (sessionId) =>
+    api.delete(`/sessions/${sessionId}`),
 }
 
 // NPCs

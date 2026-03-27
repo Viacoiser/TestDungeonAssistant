@@ -77,23 +77,32 @@ async def create_campaign(data: CampaignCreate, current_user: dict = Depends(get
 
 @router.get("")
 async def list_campaigns(current_user: dict = Depends(get_current_user)):
-    """Listar campañas del usuario"""
+    """Listar campañas del usuario via join directo"""
     try:
         supabase = get_supabase()
         user_id = current_user["id"]
-        
-        # Obtener campañas donde el usuario es miembro
-        response = supabase.client.rpc(
-            "get_user_campaigns",
-            {"user_id_param": user_id}
-        ).execute()
-        
-        campaigns = response.data if response.data else []
+
+        # Obtener membresías del usuario con datos de campaña
+        response = supabase.client.table("campaign_members") \
+            .select("role, campaigns(id, name, description, is_active, created_at)") \
+            .eq("user_id", user_id) \
+            .eq("status", "ACTIVE") \
+            .execute()
+
+        # Aplanar la respuesta: { role, campaigns: {...} } → { ...campaign, user_role }
+        campaigns = []
+        for item in (response.data or []):
+            campaign_data = item.get("campaigns")
+            if campaign_data:
+                campaigns.append({
+                    **campaign_data,
+                    "user_role": item.get("role", "PLAYER")
+                })
+
         return campaigns
-        
+
     except Exception as e:
         logger.error(f"❌ Error listando campañas: {str(e)}")
-        # Si la función RPC no existe, devolver array vacío
         return []
 
 

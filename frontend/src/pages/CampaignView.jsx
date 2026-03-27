@@ -57,9 +57,16 @@ function NotesTab({ campaignId }) {
   const [notes, setNotes] = useState([])
   const [noteText, setNoteText] = useState('')
   const [sending, setSending] = useState(false)
+  const [sendError, setSendError] = useState('')
   const [analysis, setAnalysis] = useState(null)
   const [loadingSessions, setLoadingSessions] = useState(true)
   const [creatingSession, setCreatingSession] = useState(false)
+  const [createSessionError, setCreateSessionError] = useState('')
+
+  // Estado del modal de confirmación de eliminación
+  const [deleteModal, setDeleteModal] = useState(null) // { session } | null
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     loadSessions()
@@ -88,17 +95,21 @@ function NotesTab({ campaignId }) {
   const selectSession = (session) => {
     setActiveSession(session)
     setAnalysis(null)
+    setSendError('')
     loadNotes(session.id)
   }
 
   const handleCreateSession = async () => {
     setCreatingSession(true)
+    setCreateSessionError('')
     try {
       const nextNumber = (sessions.length || 0) + 1
       await sessionAPI.create(campaignId, nextNumber, `Sesión ${nextNumber}`)
       await loadSessions()
     } catch (e) {
       console.error(e)
+      const msg = e?.response?.data?.detail || 'Error al crear la sesión. ¿Está el backend corriendo?'
+      setCreateSessionError(msg)
     } finally {
       setCreatingSession(false)
     }
@@ -108,17 +119,53 @@ function NotesTab({ campaignId }) {
     if (!noteText.trim() || !activeSession) return
     setSending(true)
     setAnalysis(null)
+    setSendError('')
     try {
       const res = await sessionAPI.addNote(activeSession.id, noteText)
       const data = res.data
-
       setAnalysis(data.analysis)
       setNoteText('')
       await loadNotes(activeSession.id)
     } catch (e) {
       console.error('Error agregando nota:', e)
+      const msg = e?.response?.data?.detail || 'Error al enviar la nota. Revisá que el backend esté corriendo.'
+      setSendError(msg)
     } finally {
       setSending(false)
+    }
+  }
+
+  // Abrir modal de confirmación
+  const openDeleteModal = (e, session) => {
+    e.stopPropagation() // no seleccionar la sesión al hacer click en eliminar
+    setDeleteModal(session)
+    setDeleteConfirmText('')
+  }
+
+  const closeDeleteModal = () => {
+    setDeleteModal(null)
+    setDeleteConfirmText('')
+  }
+
+  const handleDeleteSession = async () => {
+    if (!deleteModal) return
+    const sessionName = deleteModal.title || `Sesión ${deleteModal.session_number}`
+    if (deleteConfirmText !== sessionName) return
+
+    setDeleting(true)
+    try {
+      await sessionAPI.delete(deleteModal.id)
+      // Si era la sesión activa, deseleccionar
+      if (activeSession?.id === deleteModal.id) {
+        setActiveSession(null)
+        setNotes([])
+      }
+      await loadSessions()
+      closeDeleteModal()
+    } catch (e) {
+      console.error('Error eliminando sesión:', e)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -137,6 +184,11 @@ function NotesTab({ campaignId }) {
             <Icon.plus />
           </button>
         </div>
+        {createSessionError && (
+          <div className="mb-2 bg-red-900/30 border border-red-500/30 rounded-lg px-2 py-1.5 text-xs text-red-300">
+            ⚠️ {createSessionError}
+          </div>
+        )}
         {loadingSessions ? (
           <div className="text-gray-500 text-sm">Cargando...</div>
         ) : sessions.length === 0 ? (
@@ -145,31 +197,44 @@ function NotesTab({ campaignId }) {
             <p>Sin sesiones</p>
             <button
               onClick={handleCreateSession}
-              className="mt-2 text-purple-400 hover:text-purple-300 text-xs underline"
+              disabled={creatingSession}
+              className="mt-2 text-purple-400 hover:text-purple-300 text-xs underline disabled:opacity-50"
             >
-              Crear Sesión 1
+              {creatingSession ? 'Creando...' : 'Crear Sesión 1'}
             </button>
           </div>
         ) : (
           <div className="space-y-1">
             {sessions.map(s => (
-              <button
+              <div
                 key={s.id}
-                onClick={() => selectSession(s)}
-                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${
-                  activeSession?.id === s.id
-                    ? 'bg-purple-600/60 text-white'
-                    : 'text-gray-300 hover:bg-gray-700/50'
+                className={`group flex items-center gap-1 rounded-lg transition ${
+                  activeSession?.id === s.id ? 'bg-purple-600/60' : 'hover:bg-gray-700/50'
                 }`}
               >
-                <div className="font-medium">
-                  {s.is_active && <span className="inline-block w-2 h-2 rounded-full bg-green-400 mr-1" />}
-                  {s.title || `Sesión ${s.session_number}`}
-                </div>
-                {s.summary && (
-                  <div className="text-xs text-gray-400 mt-0.5 truncate">{s.summary}</div>
-                )}
-              </button>
+                <button
+                  onClick={() => selectSession(s)}
+                  className="flex-1 text-left px-3 py-2 text-sm"
+                >
+                  <div className={`font-medium ${activeSession?.id === s.id ? 'text-white' : 'text-gray-300'}`}>
+                    {s.is_active && <span className="inline-block w-2 h-2 rounded-full bg-green-400 mr-1" />}
+                    {s.title || `Sesión ${s.session_number}`}
+                  </div>
+                  {s.summary && (
+                    <div className="text-xs text-gray-400 mt-0.5 truncate">{s.summary}</div>
+                  )}
+                </button>
+                {/* Botón eliminar — visible al hacer hover */}
+                <button
+                  onClick={(e) => openDeleteModal(e, s)}
+                  className="opacity-0 group-hover:opacity-100 p-1 mr-1 rounded text-gray-500 hover:text-red-400 transition"
+                  title="Eliminar sesión"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
             ))}
           </div>
         )}
@@ -208,7 +273,6 @@ function NotesTab({ campaignId }) {
                   <div key={note.id} className="bg-gray-800/60 rounded-lg p-4 border border-gray-700/50">
                     <p className="text-gray-200 text-sm whitespace-pre-wrap">{note.content}</p>
 
-                    {/* Ítems detectados */}
                     {note.detected_items?.length > 0 && (
                       <div className="mt-3 flex flex-wrap gap-1">
                         {note.detected_items.map((item, i) => (
@@ -227,7 +291,6 @@ function NotesTab({ campaignId }) {
                       </div>
                     )}
 
-                    {/* NPCs detectados */}
                     {note.detected_npcs?.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1">
                         {note.detected_npcs.map((npc, i) => (
@@ -249,7 +312,7 @@ function NotesTab({ campaignId }) {
               )}
             </div>
 
-            {/* Resultado del análisis IA (flash) */}
+            {/* Resultado del análisis IA */}
             {analysis && (
               <div className="mb-3 bg-purple-900/30 border border-purple-500/40 rounded-lg p-3 text-sm">
                 <div className="text-purple-300 font-semibold mb-1">🤖 Gemini detectó:</div>
@@ -268,6 +331,13 @@ function NotesTab({ campaignId }) {
                     <span className="text-gray-400 text-xs">Ningún ítem o NPC detectado en esta nota.</span>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* Error al enviar nota */}
+            {sendError && (
+              <div className="mb-2 bg-red-900/30 border border-red-500/30 rounded-lg px-3 py-2 text-xs text-red-300">
+                ⚠️ {sendError}
               </div>
             )}
 
@@ -291,9 +361,7 @@ function NotesTab({ campaignId }) {
                 {sending ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <>
-                    <Icon.send />
-                  </>
+                  <Icon.send />
                 )}
               </button>
             </div>
@@ -301,6 +369,67 @@ function NotesTab({ campaignId }) {
           </>
         )}
       </div>
+
+      {/* Modal de confirmación de eliminación */}
+      {deleteModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+          <div className="bg-gray-900 border border-red-500/40 rounded-xl p-6 max-w-md w-full shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-400">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-lg">Eliminar sesión</h3>
+                <p className="text-gray-400 text-sm">Esta acción no se puede deshacer</p>
+              </div>
+            </div>
+
+            <p className="text-gray-300 text-sm mb-4">
+              Se eliminarán la sesión y <span className="text-red-300 font-medium">todas sus notas</span> permanentemente.
+              Para confirmar, escribí el nombre exacto de la sesión:
+            </p>
+
+            <div className="bg-gray-800 rounded-lg px-3 py-2 mb-3 text-center">
+              <span className="text-purple-300 font-mono font-semibold">
+                {deleteModal.title || `Sesión ${deleteModal.session_number}`}
+              </span>
+            </div>
+
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={e => setDeleteConfirmText(e.target.value)}
+              placeholder="Escribí el nombre aquí..."
+              autoFocus
+              className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-red-400 mb-4"
+              onKeyDown={e => {
+                if (e.key === 'Enter') handleDeleteSession()
+                if (e.key === 'Escape') closeDeleteModal()
+              }}
+            />
+
+            <div className="flex gap-3">
+              <button
+                onClick={closeDeleteModal}
+                className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteSession}
+                disabled={
+                  deleteConfirmText !== (deleteModal.title || `Sesión ${deleteModal.session_number}`) || deleting
+                }
+                className="flex-1 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition"
+              >
+                {deleting ? 'Eliminando...' : 'Eliminar sesión'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -313,6 +442,7 @@ function NpcsTab({ campaignId }) {
   const [loading, setLoading] = useState(true)
   const [prompt, setPrompt] = useState('')
   const [generating, setGenerating] = useState(false)
+  const [generateError, setGenerateError] = useState('')
   const [selectedNpc, setSelectedNpc] = useState(null)
 
   const relationColors = {
@@ -340,6 +470,7 @@ function NpcsTab({ campaignId }) {
   const handleGenerate = async () => {
     if (!prompt.trim()) return
     setGenerating(true)
+    setGenerateError('')
     try {
       const res = await npcAPI.generate(campaignId, prompt)
       const newNpc = res.data
@@ -348,6 +479,8 @@ function NpcsTab({ campaignId }) {
       setPrompt('')
     } catch (e) {
       console.error('Error generando NPC:', e)
+      const msg = e?.response?.data?.detail || 'Error al generar el NPC. Revisá que el backend esté corriendo.'
+      setGenerateError(msg)
     } finally {
       setGenerating(false)
     }
@@ -413,6 +546,11 @@ function NpcsTab({ campaignId }) {
               <>✨ Generar NPC</>
             )}
           </button>
+          {generateError && (
+            <div className="mt-2 bg-red-900/30 border border-red-500/30 rounded-lg px-2 py-1.5 text-xs text-red-300">
+              ⚠️ {generateError}
+            </div>
+          )}
         </div>
       </div>
 

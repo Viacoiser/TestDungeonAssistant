@@ -233,3 +233,36 @@ async def get_session_notes(
     except Exception as e:
         logger.error(f"❌ Error obteniendo notas: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# Eliminar sesión
+# ============================================================================
+
+@router.delete("/{session_id}")
+async def delete_session(
+    session_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Eliminar sesión y todas sus notas"""
+    try:
+        supabase = get_supabase()
+
+        # Eliminar notas primero (FK constraint)
+        supabase.client.table("session_notes") \
+            .delete() \
+            .eq("session_id", session_id) \
+            .execute()
+
+        # Eliminar la sesión
+        supabase.client.table("sessions") \
+            .delete() \
+            .eq("id", session_id) \
+            .execute()
+
+        logger.info(f"✅ Sesión {session_id} eliminada")
+        return {"message": "Sesión eliminada correctamente"}
+
+    except Exception as e:
+        logger.error(f"❌ Error eliminando sesión: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
