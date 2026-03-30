@@ -1,75 +1,98 @@
-# Registro de Definición e Identificación del Proyecto - DungeonAssistant
+# DungeonAssistant
 
-Este documento contiene la información esencial para la identificación y definición formal del proyecto DungeonAssistant, actuando como referencia para el desarrollo y gestión del ecosistema.
+Ecosistema Inteligente de Gestion RPG - PWA mobile-first para campanas D&D 5e con IA
 
-## 1. Identificación del Proyecto
+## Proyecto
 
-* Nombre del Proyecto: DungeonAssistant
-* Tipo de Aplicación: Aplicación Web Progresiva (PWA) enfocada en movilidad.
-* Dominio del Proyecto: Herramientas digitales para juegos de mesa RPG (Dungeons & Dragons 5e).
-* Versión Actual: 1.0.0 (Fase de construcción)
+[Ver especificacion completa](./DungeonAssistant_BuildPrompt_v2.md)
 
-## 2. Definición del Problema y Justificación
+## Estructura
 
-La gestión de sesiones de D&D 5e suele implicar una gran cantidad de registros físicos (hojas de personaje manuscritas), seguimiento manual de eventos de campaña y la necesidad de consultar múltiples fuentes de reglas en tiempo real. Esto puede interrumpir el ritmo narrativo y dificultar el mantenimiento de la coherencia en campañas largas.
+```
+DungeonAssistant/
+├── backend/              # Python FastAPI
+│   ├── routers/         # Endpoints
+│   ├── services/        # Logica de negocio
+│   ├── models/          # Pydantic schemas
+│   ├── main.py          # App principal
+│   └── requirements.txt
+├── frontend/            # React + Vite
+│   ├── src/
+│   │   ├── assets/      # Imagenes y media optimizados
+│   │   ├── pages/       # Componentes de pagina
+│   │   ├── components/  # Componentes reutilizables
+│   │   ├── store/       # Zustand stores
+│   │   ├── services/    # API, Socket.io, Speech
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   ├── package.json
+│   ├── vite.config.js
+│   └── tailwind.config.js
+└── README.md
+```
 
-DungeonAssistant surge para solventar estos desafíos mediante la integración de inteligencia artificial que facilita la digitalización de herramientas físicas y proporciona un asistente inteligente capaz de comprender el contexto histórico de la campaña, permitiendo que tanto el Dungeon Master como los jugadores se enfoquen en la experiencia narrativa.
+## Quick Start
 
-## 3. Objetivos del Proyecto
+### Backend
+```bash
+cd backend
+python -m venv venv
 
-### Objetivo General
-Desarrollar una plataforma digital inteligente e integrada para la gestión eficiente de campañas de Dungeons & Dragons 5e, optimizada para dispositivos móviles y accesible en entornos sin conexión constante.
+# Windows
+venv\Scripts\activate
+# macOS/Linux
+source venv/bin/activate
 
-### Objetivos Específicos
-* Implementar un sistema de digitalización de fichas de personaje mediante visión artificial para eliminar la barrera entre lo físico y lo digital.
-* Crear un motor de asistencia basado en modelos de lenguaje que actúe como memoria histórica y consultor de reglas de la campaña.
-* Proveer herramientas de generación dinámica de contenido (NPCs, facciones) que mantengan la coherencia con el lore establecido.
-* Facilitar el registro de sesiones mediante bitácoras por voz para simplificar el seguimiento de los eventos de la historia.
+pip install -r requirements.txt
+cp .env.example .env
+# Editar .env con tus credenciales
 
-## 4. Descripción de la Solución
-
-DungeonAssistant se compone de un ecosistema que integra un servidor de procesamiento asíncrono y una interfaz de usuario reactiva, comunicados en tiempo real. Las funcionalidades clave incluyen:
-
-* Gestión Multi-Rol: Los usuarios pueden administrar sus personajes o dirigir campañas, con roles dinámicos por campaña.
-* Digitalización OCR: Procesamiento de imágenes de hojas de personaje oficiales para su conversión en datos vivos.
-* Asistente RAG: Sistema de generación aumentada por recuperación que utiliza las notas de la sesión para responder preguntas sobre la historia.
-* Gestión de Sesión: Control de tiempos, notas compartidas y resúmenes automáticos de los hitos alcanzados por los jugadores.
-
-## 5. Ámbito y Alcance
-
-El proyecto abarca desde la infraestructura de autenticación y base de datos hasta la interfaz final del usuario, cubriendo el ciclo completo de una sesión de juego, desde la preparación inicial hasta el resumen final de los eventos ocurridos.
-
-## 6. Estado y Progreso
-
-Actualmente, el proyecto ha finalizado su fase de definición estructural y se encuentra en la etapa de implementación de módulos funcionales básicos, con la arquitectura asíncrona y los modelos de datos ya establecidos.
-
-## STACK TECNOLÓGICO
+python -m uvicorn main:socket_app --reload
+```
 
 ### Frontend
-- React + Vite
-- Tailwind CSS (mobile-first, breakpoint md: para desktop)
+```bash
+cd frontend
+npm install
+cp .env.example .env
+# Editar .env con tus URLs
+
+npm run dev
+```
+
+## Stack Tecnologico
+
+### Frontend
+- React 18 + Vite
+- Tailwind CSS (mobile-first)
 - Zustand (estado global)
-- vite-plugin-pwa (manifest.json + Service Worker automático)
-- React Router DOM (navegación)
-- Socket.io-client (tiempo real)
-- Web Speech API (voz nativa del navegador)
+- Socket.io (tiempo real)
+- Web Speech API
+- PWA (vite-plugin-pwa)
 
 ### Backend
 - Python 3.11+
-- FastAPI (API REST asíncrona)
-- Pydantic v2 (validación de datos)
-- python-socketio (WebSockets)
-- httpx (llamadas externas)
+- FastAPI
+- Pydantic v2
+- Socket.io (WebSockets)
 
-### Base de datos
-- PostgreSQL vía Supabase
-- Supabase Auth (autenticación)
-- Supabase Realtime (sincronización en tiempo real)
-- Supabase Storage (almacenamiento de imágenes de hojas físicas)
+### Datos & IA
+- PostgreSQL via Supabase
+- Google Gemini API
+- Gemini Vision (OCR)
+- dnd5eapi.co
 
-### IA y servicios externos
-- Google Gemini API (gemini-2.5-flash): generación de PNJs, asistente
-  conversacional RAG, análisis de bitácora
-- Gemini Vision API: OCR de hojas físicas de D&D 5e
-- dnd5eapi.co (API pública, sin clave): validación de clases, razas,
-  hechizos y estadísticas oficiales de D&D 5e
+## Features
+
+- Autenticacion sin roles globales (roles por campana)
+- Gestion de personajes con validacion D&D 5e
+- OCR de hojas fisicas con Gemini Vision
+- Generador de NPCs con RAG
+- Asistente conversacional
+- Entrada de voz (Web Speech API)
+- Sincronizacion en tiempo real (Socket.io)
+- PWA con offline support
+
+## Estado
+
+Construccion en progreso - Fase 1: Setup base
