@@ -46,6 +46,12 @@ const Icon = {
       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
     </svg>
   ),
+  settings: () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  ),
 }
 
 // ============================================================================
@@ -67,6 +73,11 @@ function NotesTab({ campaignId }) {
   const [deleteModal, setDeleteModal] = useState(null) // { session } | null
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [deleting, setDeleting] = useState(false)
+
+  // Estado para editar nota
+  const [editingNoteId, setEditingNoteId] = useState(null)
+  const [editNoteText, setEditNoteText] = useState('')
+  const [updatingNote, setUpdatingNote] = useState(false)
 
   useEffect(() => {
     loadSessions()
@@ -132,6 +143,47 @@ function NotesTab({ campaignId }) {
       setSendError(msg)
     } finally {
       setSending(false)
+    }
+  }
+
+  const handleStartEditNote = (note) => {
+    setEditingNoteId(note.id)
+    setEditNoteText(note.content)
+  }
+
+  const handleCancelEditNote = () => {
+    setEditingNoteId(null)
+    setEditNoteText('')
+    setSendError('')
+  }
+
+  const handleUpdateNote = async (noteId) => {
+    if (!editNoteText.trim()) return
+    setUpdatingNote(true)
+    setSendError('')
+    try {
+      const res = await sessionAPI.updateNote(noteId, editNoteText)
+      setAnalysis(res.data.analysis)
+      await loadNotes(activeSession.id)
+      setEditingNoteId(null)
+      setEditNoteText('')
+    } catch (e) {
+      console.error('Error actualizando nota:', e)
+      setSendError(e?.response?.data?.detail || 'Error al actualizar nota.')
+    } finally {
+      setUpdatingNote(false)
+    }
+  }
+
+  const handleDeleteNote = async (noteId) => {
+    if (!window.confirm('¿Seguro que deseas eliminar permanentemente esta nota?')) return
+    try {
+      await sessionAPI.deleteNote(noteId)
+      await loadNotes(activeSession.id)
+      setAnalysis(null)
+    } catch (e) {
+      console.error('Error eliminando nota:', e)
+      setSendError(e?.response?.data?.detail || 'Error al eliminar nota.')
     }
   }
 
@@ -208,9 +260,8 @@ function NotesTab({ campaignId }) {
             {sessions.map(s => (
               <div
                 key={s.id}
-                className={`group flex items-center gap-1 rounded-lg transition ${
-                  activeSession?.id === s.id ? 'bg-purple-600/60' : 'hover:bg-gray-700/50'
-                }`}
+                className={`group flex items-center gap-1 rounded-lg transition ${activeSession?.id === s.id ? 'bg-purple-600/60' : 'hover:bg-gray-700/50'
+                  }`}
               >
                 <button
                   onClick={() => selectSession(s)}
@@ -270,43 +321,70 @@ function NotesTab({ campaignId }) {
                 </div>
               ) : (
                 notes.map(note => (
-                  <div key={note.id} className="bg-gray-800/60 rounded-lg p-4 border border-gray-700/50">
-                    <p className="text-gray-200 text-sm whitespace-pre-wrap">{note.content}</p>
-
-                    {note.detected_items?.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-1">
-                        {note.detected_items.map((item, i) => (
-                          <span
-                            key={i}
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
-                              item.is_magical
-                                ? 'bg-purple-500/25 text-purple-300 border border-purple-500/40'
-                                : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                            }`}
-                          >
-                            {item.is_magical && <Icon.magic />}
-                            {item.item_name} {item.quantity > 1 && `×${item.quantity}`}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {note.detected_npcs?.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {note.detected_npcs.map((npc, i) => (
-                          <span
-                            key={i}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                          >
-                            👤 {npc.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="text-xs text-gray-500 mt-2">
-                      {new Date(note.created_at).toLocaleString('es-CL')}
+                  <div key={note.id} className="bg-gray-800/60 rounded-lg p-4 border border-gray-700/50 group relative">
+                    {/* Botones de acción note */}
+                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition flex gap-3 bg-gray-800/80 px-2 py-1 rounded">
+                      <button onClick={() => handleStartEditNote(note)} className="text-gray-400 hover:text-purple-400" title="Editar nota">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                      </button>
+                      <button onClick={() => handleDeleteNote(note.id)} className="text-gray-400 hover:text-red-400" title="Eliminar nota">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
                     </div>
+
+                    {editingNoteId === note.id ? (
+                      <div className="mt-1">
+                        <textarea
+                          value={editNoteText}
+                          onChange={e => setEditNoteText(e.target.value)}
+                          className="w-full bg-gray-900 border border-purple-500/30 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-400 resize-none min-h-[80px]"
+                        />
+                        <div className="flex justify-end gap-2 mt-2">
+                          <button onClick={handleCancelEditNote} className="px-3 py-1 text-xs text-gray-400 hover:text-white transition">Cancelar</button>
+                          <button onClick={() => handleUpdateNote(note.id)} disabled={updatingNote || !editNoteText.trim()} className="px-3 py-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded text-xs transition">
+                            {updatingNote ? 'Guardando...' : 'Re-analizar y Guardar'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-gray-200 text-sm whitespace-pre-wrap pr-12">{note.content}</p>
+
+                        {note.detected_items?.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-1">
+                            {note.detected_items.map((item, i) => (
+                              <span
+                                key={i}
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${item.is_magical
+                                  ? 'bg-purple-500/25 text-purple-300 border border-purple-500/40'
+                                  : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                  }`}
+                              >
+                                {item.is_magical && <Icon.magic />}
+                                {item.item_name} {item.quantity > 1 && `×${item.quantity}`}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {note.detected_npcs?.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {note.detected_npcs.map((npc, i) => (
+                              <span
+                                key={i}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                              >
+                                👤 {npc.name}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="text-xs text-gray-500 mt-2">
+                          {new Date(note.created_at).toLocaleString('es-CL')}
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))
               )}
@@ -444,6 +522,14 @@ function NpcsTab({ campaignId }) {
   const [generating, setGenerating] = useState(false)
   const [generateError, setGenerateError] = useState('')
   const [selectedNpc, setSelectedNpc] = useState(null)
+  const [editingNpc, setEditingNpc] = useState(false)
+  const [editForm, setEditForm] = useState({})
+  const [savingNpc, setSavingNpc] = useState(false)
+
+  const [npcDeleteModal, setNpcDeleteModal] = useState(null)
+  const [npcDeleteConfirmText, setNpcDeleteConfirmText] = useState('')
+  const [npcDeleting, setNpcDeleting] = useState(false)
+  const [generatingTrait, setGeneratingTrait] = useState(false)
 
   const relationColors = {
     aliado: 'text-green-300 border-green-500/30 bg-green-500/10',
@@ -473,9 +559,8 @@ function NpcsTab({ campaignId }) {
     setGenerateError('')
     try {
       const res = await npcAPI.generate(campaignId, prompt)
-      const newNpc = res.data
-      setNpcs(prev => [...prev, newNpc])
-      setSelectedNpc(newNpc)
+      await loadNpcs()
+      setSelectedNpc(res.data)
       setPrompt('')
     } catch (e) {
       console.error('Error generando NPC:', e)
@@ -483,6 +568,61 @@ function NpcsTab({ campaignId }) {
       setGenerateError(msg)
     } finally {
       setGenerating(false)
+    }
+  }
+
+  const startEditing = () => {
+    setEditForm({ ...selectedNpc, stats: { ...selectedNpc.stats } })
+    setEditingNpc(true)
+  }
+
+  const handleUpdateNpc = async () => {
+    setSavingNpc(true)
+    try {
+      const res = await npcAPI.update(campaignId, selectedNpc.id, editForm)
+      const updatedNpc = res.data
+      setNpcs(prev => prev.map(n => n.id === updatedNpc.id ? updatedNpc : n))
+      setSelectedNpc({ ...selectedNpc, ...editForm })
+      setEditingNpc(false)
+    } catch (e) {
+      console.error('Error actualizando NPC:', e)
+      alert(e?.response?.data?.detail || 'Error al guardar NPC.')
+    } finally {
+      setSavingNpc(false)
+    }
+  }
+
+  const handleDeleteNpc = async () => {
+    if (npcDeleteConfirmText !== selectedNpc.name) return
+    setNpcDeleting(true)
+    try {
+      await npcAPI.delete(campaignId, selectedNpc.id)
+      await loadNpcs()
+      setSelectedNpc(null)
+      setNpcDeleteModal(null)
+      setEditingNpc(false)
+    } catch (e) {
+      console.error('Error eliminando NPC:', e)
+      alert(e?.response?.data?.detail || 'Error al eliminar NPC.')
+    } finally {
+      setNpcDeleting(false)
+    }
+  }
+
+  const handleGenerateTrait = async () => {
+    setGeneratingTrait(true)
+    try {
+      const res = await npcAPI.generateTrait(campaignId, selectedNpc.id)
+      setNpcs(prev => prev.map(n => n.id === res.data.npc.id ? res.data.npc : n))
+      setSelectedNpc(res.data.npc)
+      if (editingNpc) {
+        setEditForm(prev => ({ ...prev, personality: res.data.npc.personality }))
+      }
+    } catch (e) {
+      console.error('Error generando rasgo:', e)
+      alert(e?.response?.data?.detail || 'Error al generar el rasgo.')
+    } finally {
+      setGeneratingTrait(false)
     }
   }
 
@@ -506,11 +646,10 @@ function NpcsTab({ campaignId }) {
                 <button
                   key={npc.id}
                   onClick={() => setSelectedNpc(npc)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${
-                    selectedNpc?.id === npc.id
-                      ? 'bg-purple-600/60 text-white'
-                      : 'text-gray-300 hover:bg-gray-700/50'
-                  }`}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${selectedNpc?.id === npc.id
+                    ? 'bg-purple-600/60 text-white'
+                    : 'text-gray-300 hover:bg-gray-700/50'
+                    }`}
                 >
                   <div className="flex items-center gap-2">
                     <span>{npc.is_alive ? '🟢' : '💀'}</span>
@@ -566,51 +705,181 @@ function NpcsTab({ campaignId }) {
         ) : (
           <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
             <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="text-xl font-bold text-white">{selectedNpc.name}</h3>
-                {selectedNpc.race && (
-                  <span className="text-purple-300 text-sm">{selectedNpc.race}</span>
+              {editingNpc ? (
+                <div className="flex-1 mr-4 space-y-3">
+                  <div>
+                    <label className="text-xs text-gray-500 uppercase">Nombre</label>
+                    <input value={editForm.name || ''} onChange={e => setEditForm({ ...editForm, name: e.target.value })} className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-1.5 text-white" />
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <label className="text-xs text-gray-500 uppercase">Raza/Clase</label>
+                      <input value={editForm.race || ''} onChange={e => setEditForm({ ...editForm, race: e.target.value })} className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-1.5 text-white text-sm" />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-xs text-gray-500 uppercase">Estado Vital</label>
+                      <select value={editForm.is_alive ? 'alive' : 'dead'} onChange={e => setEditForm({ ...editForm, is_alive: e.target.value === 'alive' })} className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-1.5 text-white text-sm">
+                        <option value="alive">🟢 Vivo</option><option value="dead">💀 Muerto</option>
+                      </select>
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-xs text-gray-500 uppercase">Relación</label>
+                      <select value={editForm.relationship_to_party || 'neutral'} onChange={e => setEditForm({ ...editForm, relationship_to_party: e.target.value })} className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-1.5 text-white text-sm">
+                        <option value="aliado">Aliado</option><option value="enemigo">Enemigo</option>
+                        <option value="neutral">Neutral</option><option value="desconocido">Desconocido</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    {selectedNpc.name}
+                    <span className="text-sm">{selectedNpc.is_alive ? '🟢' : '💀'}</span>
+                  </h3>
+                  {selectedNpc.race && (
+                    <span className="text-purple-300 text-sm">{selectedNpc.race}</span>
+                  )}
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 flex-col sm:flex-row">
+                {editingNpc ? (
+                  <>
+                    <button onClick={() => setEditingNpc(false)} className="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 text-white rounded transition">Cancelar</button>
+                    <button onClick={handleUpdateNpc} disabled={savingNpc} className="px-3 py-1 text-sm bg-purple-600 hover:bg-purple-500 text-white rounded transition">{savingNpc ? 'Guardando...' : 'Guardar'}</button>
+                    <button onClick={() => setNpcDeleteModal(selectedNpc)} className="px-3 py-1 text-sm bg-red-600/30 hover:bg-red-600/50 text-red-300 rounded transition border border-red-500/30">🗑️ Borrar</button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={startEditing} className="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 text-white rounded transition border border-gray-600"> Editar</button>
+                    <span className={`capitalize px-2 py-0.5 text-xs border rounded-full ${relationColors[selectedNpc.relationship_to_party] || relationColors.desconocido}`}>
+                      {selectedNpc.relationship_to_party || 'desconocido'}
+                    </span>
+                  </>
                 )}
-              </div>
-              <div className="flex items-center gap-2">
-                {selectedNpc.generated_by_ai && (
-                  <span className="px-2 py-0.5 text-xs bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full">
-                    ✨ IA
-                  </span>
-                )}
-                <span className={`px-2 py-0.5 text-xs border rounded-full ${
-                  relationColors[selectedNpc.relationship_to_party] || relationColors.desconocido
-                }`}>
-                  {selectedNpc.relationship_to_party || 'desconocido'}
-                </span>
               </div>
             </div>
 
             <div className="space-y-4">
-              {selectedNpc.personality && (
-                <div>
-                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Personalidad</h4>
-                  <p className="text-gray-200 text-sm">{selectedNpc.personality}</p>
-                </div>
-              )}
-
-              {selectedNpc.secrets && (
-                <div className="bg-red-900/20 border border-red-500/20 rounded-lg p-3">
-                  <h4 className="text-xs font-semibold text-red-400 uppercase tracking-wider mb-1">🔒 Secreto</h4>
-                  <p className="text-gray-300 text-sm">{selectedNpc.secrets}</p>
-                </div>
-              )}
-
-              {selectedNpc.stats && Object.keys(selectedNpc.stats).length > 0 && (
-                <div>
-                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Stats</h4>
-                  <div className="flex gap-3">
-                    {Object.entries(selectedNpc.stats).map(([key, val]) => (
-                      <div key={key} className="text-center bg-gray-700/50 rounded-lg px-3 py-2">
-                        <div className="text-lg font-bold text-white">{val}</div>
-                        <div className="text-xs text-gray-400">{key}</div>
+              {editingNpc ? (
+                <>
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs text-gray-500 uppercase">Personalidad</label>
+                      <button onClick={handleGenerateTrait} disabled={generatingTrait} className="text-xs text-purple-400 hover:text-purple-300 transition flex items-center gap-1">
+                        {generatingTrait ? '⏳ Generando...' : '🎲 Tirar rasgo aleatorio'}
+                      </button>
+                    </div>
+                    <textarea value={editForm.personality || ''} onChange={e => setEditForm({ ...editForm, personality: e.target.value })} rows={3} className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white text-sm resize-none" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-red-400 uppercase">Secrecto</label>
+                    <textarea value={editForm.secrets || ''} onChange={e => setEditForm({ ...editForm, secrets: e.target.value })} rows={2} className="w-full bg-red-900/20 border border-red-500/40 rounded px-3 py-2 text-white text-sm resize-none" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  {selectedNpc.personality && (
+                    <div className="group relative">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Personalidad</h4>
+                        <button onClick={handleGenerateTrait} disabled={generatingTrait} className="opacity-0 group-hover:opacity-100 text-xs bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 px-2 py-0.5 rounded transition inline-flex items-center gap-1">
+                          {generatingTrait ? '⏳' : '🎲 Generar rasgo'}
+                        </button>
                       </div>
-                    ))}
+                      <p className="text-gray-200 text-sm whitespace-pre-wrap">{selectedNpc.personality}</p>
+                    </div>
+                  )}
+
+                  {selectedNpc.secrets && (
+                    <details className="bg-red-900/20 border border-red-500/20 rounded-lg group">
+                      <summary className="p-3 cursor-pointer text-xs font-semibold text-red-400 uppercase tracking-wider flex items-center justify-between opacity-80 hover:opacity-100 transition list-none [&::-webkit-details-marker]:hidden">
+                        <span className="flex items-center italic">Secreto</span>
+                        <span className="text-[10px] bg-red-900/50 px-2 py-0.5 rounded border border-red-500/30 font-medium group-open:hidden">Revelar</span>
+                        <span className="text-[10px] bg-red-900/50 px-2 py-0.5 rounded border border-red-500/30 font-medium hidden group-open:block">Ocultar</span>
+                      </summary>
+                      <div className="px-3 pb-3 pt-1 border-t border-red-500/10 mt-1">
+                        <p className="text-gray-200 text-sm whitespace-pre-wrap">{selectedNpc.secrets}</p>
+                      </div>
+                    </details>
+                  )}
+                </>
+              )}
+
+              {editingNpc ? (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stats y Habilidades</h4>
+                    <button onClick={() => {
+                      const no = String(Date.now()).slice(-4);
+                      setEditForm(prev => ({ ...prev, stats: { ...(prev.stats || {}), [`Nuevo-${no}`]: '' } }))
+                    }}
+                      className="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-white"
+                    >+ Agregar</button>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {Object.entries(editForm.stats || {})
+                      .filter(([key]) => key !== '_prompt')
+                      .map(([key, val]) => (
+                        <div key={key} className="flex flex-col gap-1 bg-gray-800/80 p-2 rounded border border-gray-700 relative group">
+                          <input value={key} onChange={e => {
+                            const newStats = { ...editForm.stats };
+                            const v = newStats[key];
+                            delete newStats[key];
+                            newStats[e.target.value] = v;
+                            setEditForm({ ...editForm, stats: newStats });
+                          }} className="w-full bg-transparent text-xs text-gray-400 focus:outline-none focus:text-gray-200" />
+                          <input value={val} onChange={e => setEditForm({ ...editForm, stats: { ...editForm.stats, [key]: e.target.value } })} className="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-white text-sm" />
+                          <button onClick={() => {
+                            const newStats = { ...editForm.stats };
+                            delete newStats[key];
+                            setEditForm({ ...editForm, stats: newStats });
+                          }} className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition">×</button>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              ) : (
+                selectedNpc.stats && Object.keys(selectedNpc.stats).filter(k => k !== '_prompt').length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Stats</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(selectedNpc.stats)
+                        .filter(([key]) => key !== '_prompt')
+                        .map(([key, val]) => (
+                          <div key={key} className="bg-gray-700/50 rounded-lg px-3 py-1 flex items-center gap-2">
+                            <span className="text-gray-400 text-xs font-medium">{key}</span>
+                            <span className="text-white text-sm font-bold">{val}</span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )
+              )}
+
+              {selectedNpc.stats?._prompt && (
+                <div className="mt-4 border-t border-gray-700/50 pt-4">
+                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Prompt original</h4>
+                  <div
+                    className="relative group cursor-pointer overflow-hidden rounded-lg bg-gray-900/50 p-3 flex"
+                    onClick={(e) => {
+                      const el = e.currentTarget.querySelector('p');
+                      if (el.classList.contains('blur-[4px]')) {
+                        el.classList.remove('blur-[4px]', 'select-none');
+                      } else {
+                        el.classList.add('blur-[4px]', 'select-none');
+                      }
+                    }}
+                  >
+                    <p className="text-gray-400 text-sm italic blur-[4px] select-none transition-all duration-300 w-full">
+                      "{selectedNpc.stats._prompt}"
+                    </p>
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none">
+                      <span className="bg-black/90 border border-gray-600 text-white text-xs px-3 py-1.5 rounded shadow-xl">
+                        Clic para revelar / ocultar
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -618,6 +887,44 @@ function NpcsTab({ campaignId }) {
           </div>
         )}
       </div>
+
+      {/* Modal Eliminar NPC */}
+      {npcDeleteModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+          <div className="bg-gray-900 border border-red-500/40 rounded-xl p-6 max-w-md w-full shadow-2xl">
+            <h3 className="text-white font-bold text-lg mb-2">¿Eliminar NPC?</h3>
+            <p className="text-gray-300 text-sm mb-4">
+              Esta acción eliminará a este personaje permanentemente.
+              Para confirmar, escribe <span className="text-red-300 font-medium font-mono border-b border-red-500/50">{npcDeleteModal.name}</span>
+            </p>
+            <input
+              type="text"
+              value={npcDeleteConfirmText}
+              onChange={e => setNpcDeleteConfirmText(e.target.value)}
+              className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-400 mb-4"
+              placeholder={npcDeleteModal.name}
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setNpcDeleteModal(null)
+                  setNpcDeleteConfirmText('')
+                }}
+                className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteNpc}
+                disabled={npcDeleteConfirmText !== npcDeleteModal.name || npcDeleting}
+                className="flex-1 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition"
+              >
+                {npcDeleting ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -675,13 +982,12 @@ function AssistantTab({ campaignId }) {
                 🐉
               </div>
             )}
-            <div className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-              msg.role === 'user'
-                ? 'bg-purple-600/70 text-white rounded-tr-sm'
-                : msg.error
-                  ? 'bg-red-900/30 border border-red-500/30 text-red-200 rounded-tl-sm'
-                  : 'bg-gray-700/70 text-gray-100 border border-gray-600/50 rounded-tl-sm'
-            }`}>
+            <div className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${msg.role === 'user'
+              ? 'bg-purple-600/70 text-white rounded-tr-sm'
+              : msg.error
+                ? 'bg-red-900/30 border border-red-500/30 text-red-200 rounded-tl-sm'
+                : 'bg-gray-700/70 text-gray-100 border border-gray-600/50 rounded-tl-sm'
+              }`}>
               <p className="whitespace-pre-wrap">{msg.text}</p>
             </div>
           </div>
@@ -725,6 +1031,153 @@ function AssistantTab({ campaignId }) {
 }
 
 // ============================================================================
+// Tab: Configuración de Campaña
+// ============================================================================
+function SettingsTab({ campaign, onUpdate }) {
+  const [name, setName] = useState(campaign?.name || '')
+  const [description, setDescription] = useState(campaign?.description || '')
+  const [loreSummary, setLoreSummary] = useState(campaign?.lore_summary || '')
+  const [saving, setSaving] = useState(false)
+  const [saveMsg, setSaveMsg] = useState('')
+  const navigate = useNavigate()
+
+  // Modal eliminar
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deleting, setDeleting] = useState(false)
+
+  const handleSave = async () => {
+    setSaving(true)
+    setSaveMsg('')
+    try {
+      const res = await campaignAPI.update(campaign.id, {
+        name,
+        description,
+        lore_summary: loreSummary
+      })
+      setSaveMsg('✅ Cambios guardados')
+      if (onUpdate) onUpdate(res.data)
+      setTimeout(() => setSaveMsg(''), 3000)
+    } catch (e) {
+      setSaveMsg('⚠️ ' + (e?.response?.data?.detail || 'Error guardando'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (deleteConfirmText !== campaign.name) return
+    setDeleting(true)
+    try {
+      await campaignAPI.delete(campaign.id)
+      navigate('/dashboard')
+    } catch (e) {
+      console.error(e)
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto flex flex-col gap-6 h-full overflow-y-auto pr-2 pb-8">
+      <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6 flex flex-col gap-4">
+        <h3 className="text-xl font-bold text-white mb-2">Ajustes de Campaña</h3>
+
+        <div>
+          <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Nombre</label>
+          <input
+            value={name}
+            onChange={e => setName(e.target.value)}
+            className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Descripción Breve</label>
+          <textarea
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            rows={2}
+            className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 resize-none"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Lore / Tono de campaña</label>
+          <p className="text-xs text-gray-500 mb-2">Guía para el asistente IA y generador de NPCs. Describe aquí el mundo y el progreso de la aventura.</p>
+          <textarea
+            value={loreSummary}
+            onChange={e => setLoreSummary(e.target.value)}
+            rows={6}
+            className="w-full bg-gray-900 border border-purple-500/30 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 resize-none"
+          />
+        </div>
+
+        <div className="flex items-center gap-4 mt-2">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-6 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-medium rounded-lg transition"
+          >
+            {saving ? 'Guardando...' : 'Guardar Cambios'}
+          </button>
+          {saveMsg && <span className="text-sm text-gray-300">{saveMsg}</span>}
+        </div>
+      </div>
+
+      <div className="bg-red-900/10 border border-red-900/50 rounded-xl p-6">
+        <h3 className="text-lg font-bold text-red-400 mb-2">Zona de Peligro</h3>
+        <p className="text-gray-400 text-sm mb-4">
+          Una vez que elimines una campaña, no hay vuelta atrás. Esto borrará permanentemente la campaña, sus sesiones, NPCs y miembros.
+        </p>
+        <button
+          onClick={() => setShowDeleteModal(true)}
+          className="px-4 py-2 bg-red-600/20 hover:bg-red-600/40 border border-red-500/50 text-red-300 font-medium rounded-lg transition"
+        >
+          Eliminar campaña
+        </button>
+      </div>
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+          <div className="bg-gray-900 border border-red-500/40 rounded-xl p-6 max-w-md w-full shadow-2xl">
+            <h3 className="text-white font-bold text-lg mb-2">¿Estás absolutamente seguro?</h3>
+            <p className="text-gray-300 text-sm mb-4">
+              Esta acción eliminará la campaña y todos sus datos asociados.
+              Para confirmar, escribe <span className="text-red-300 font-medium font-mono border-b border-red-500/50">{campaign.name}</span>
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={e => setDeleteConfirmText(e.target.value)}
+              className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-400 mb-4"
+              placeholder={campaign.name}
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false)
+                  setDeleteConfirmText('')
+                }}
+                className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleteConfirmText !== campaign.name || deleting}
+                className="flex-1 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition"
+              >
+                {deleting ? 'Eliminando...' : 'Eliminar permanente'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================================================
 // CampaignView — Pantalla principal
 // ============================================================================
 export default function CampaignView() {
@@ -752,6 +1205,7 @@ export default function CampaignView() {
     { id: 'notes', label: 'Notas', icon: <Icon.scroll /> },
     { id: 'npcs', label: 'NPCs', icon: <Icon.npc /> },
     { id: 'assistant', label: 'Asistente', icon: <Icon.chat /> },
+    { id: 'settings', label: 'Configuración', icon: <Icon.settings /> },
   ]
 
   if (loading) {
@@ -790,11 +1244,10 @@ export default function CampaignView() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-5 py-3 text-sm font-medium transition border-b-2 ${
-                activeTab === tab.id
-                  ? 'border-purple-500 text-purple-300'
-                  : 'border-transparent text-gray-400 hover:text-gray-200'
-              }`}
+              className={`flex items-center gap-2 px-5 py-3 text-sm font-medium transition border-b-2 ${activeTab === tab.id
+                ? 'border-purple-500 text-purple-300'
+                : 'border-transparent text-gray-400 hover:text-gray-200'
+                }`}
             >
               {tab.icon}
               {tab.label}
@@ -809,6 +1262,8 @@ export default function CampaignView() {
           {activeTab === 'notes' && <NotesTab campaignId={campaignId} />}
           {activeTab === 'npcs' && <NpcsTab campaignId={campaignId} />}
           {activeTab === 'assistant' && <AssistantTab campaignId={campaignId} />}
+          {activeTab === 'settings' && <SettingsTab campaign={campaign} onUpdate={setCampaign} />}
+
         </div>
       </main>
     </div>

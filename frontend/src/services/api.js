@@ -41,6 +41,10 @@ export const campaignAPI = {
   list: () => api.get('/campaigns'),
   getDetail: (campaignId) =>
     api.get(`/campaigns/${campaignId}`),
+  update: (campaignId, data) =>
+    api.patch(`/campaigns/${campaignId}`, data),
+  delete: (campaignId) =>
+    api.delete(`/campaigns/${campaignId}`),
   join: (campaignId, role) =>
     api.post(`/campaigns/${campaignId}/join`, { role }),
   getMembers: (campaignId) =>
@@ -72,6 +76,10 @@ export const sessionAPI = {
     api.post(`/sessions/${sessionId}/notes`, { content }),
   getNotes: (sessionId) =>
     api.get(`/sessions/${sessionId}/notes`),
+  updateNote: (noteId, content) =>
+    api.patch(`/sessions/notes/${noteId}`, { content }),
+  deleteNote: (noteId) =>
+    api.delete(`/sessions/notes/${noteId}`),
   delete: (sessionId) =>
     api.delete(`/sessions/${sessionId}`),
 }
@@ -82,6 +90,12 @@ export const npcAPI = {
     api.get(`/campaigns/${campaignId}/npcs`),
   generate: (campaignId, prompt) =>
     api.post(`/campaigns/${campaignId}/npcs`, { prompt }),
+  update: (campaignId, npcId, data) =>
+    api.patch(`/campaigns/${campaignId}/npcs/${npcId}`, data),
+  delete: (campaignId, npcId) =>
+    api.delete(`/campaigns/${campaignId}/npcs/${npcId}`),
+  generateTrait: (campaignId, npcId) =>
+    api.post(`/campaigns/${campaignId}/npcs/${npcId}/trait`),
 }
 
 // Assistant

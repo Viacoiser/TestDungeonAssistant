@@ -236,6 +236,63 @@ async def get_session_notes(
 
 
 # ============================================================================
+# Editar nota
+# ============================================================================
+
+@router.patch("/notes/{note_id}")
+async def update_session_note(
+    note_id: str,
+    data: NoteCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Editar el contenido de una nota y re-analizarla con Gemini"""
+    try:
+        supabase = get_supabase()
+        gemini = get_gemini()
+
+        # Analizar nota con Gemini Function Calling
+        analysis = await gemini.analyze_session_note(data.content)
+        detected_items = analysis.get("detected_items", [])
+        detected_npcs = analysis.get("detected_npcs", [])
+
+        result = supabase.client.table("session_notes").update({
+            "content": data.content,
+            "detected_items": detected_items,
+            "detected_npcs": detected_npcs
+        }).eq("id", note_id).execute()
+
+        return {
+            "note": result.data[0] if result.data else {},
+            "analysis": {
+                "detected_items": detected_items,
+                "detected_npcs": detected_npcs,
+                "items_count": len(detected_items),
+                "npcs_count": len(detected_npcs)
+            }
+        }
+    except Exception as e:
+        logger.error(f"❌ Error editando nota: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================================================
+# Eliminar nota
+# ============================================================================
+
+@router.delete("/notes/{note_id}")
+async def delete_session_note(
+    note_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Eliminar una nota individual"""
+    try:
+        supabase = get_supabase()
+        supabase.client.table("session_notes").delete().eq("id", note_id).execute()
+        return {"message": "Nota eliminada"}
+    except Exception as e:
+        logger.error(f"❌ Error eliminando nota: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================================================
 # Eliminar sesión
 # ============================================================================
 

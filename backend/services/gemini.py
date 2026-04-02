@@ -164,16 +164,16 @@ class GeminiService:
         """
         logger.info(f"Respondiendo pregunta con RAG: {question[:60]}...")
 
-        campaign_name = context.get("campaign_name", "la campana")
-        lore_summary = context.get("lore_summary", "Sin informacion de trasfondo disponible.")
+        campaign_name = context.get("campaign_name") or "la campana"
+        lore_summary = context.get("lore_summary") or "Sin informacion de trasfondo disponible."
 
-        recent_notes = context.get("recent_notes", [])[-3:]
+        recent_notes = (context.get("recent_notes") or [])[-3:]
         notes_text = ""
         for i, note in enumerate(recent_notes, 1):
-            content = note.get("content", "")[:500]
+            content = (note.get("content") or "")[:500]
             notes_text += f"\nNota {i}: {content}"
 
-        npcs = context.get("npcs", [])
+        npcs = context.get("npcs") or []
         npcs_text = ""
         if npcs:
             npcs_list = [
@@ -217,9 +217,9 @@ class GeminiService:
         """Generar NPC coherente con el mundo de la campana"""
         logger.info(f"Generando NPC con prompt: {prompt[:50]}...")
 
-        campaign_name = context.get("campaign_name", "la campana")
-        lore_summary = context.get("lore_summary", "")[:500]
-        existing_npcs = context.get("npcs", [])
+        campaign_name = context.get("campaign_name") or "la campana"
+        lore_summary = (context.get("lore_summary") or "")[:500]
+        existing_npcs = context.get("npcs") or []
         existing_names = [n.get("name", "") for n in existing_npcs[:5]]
 
         full_prompt = (
@@ -231,13 +231,20 @@ class GeminiService:
             "{\n"
             "  \"name\": \"Nombre del NPC\",\n"
             "  \"race\": \"Raza (elf, human, dwarf, etc.)\",\n"
-            "  \"personality\": \"Descripcion de personalidad en 2-3 oraciones\",\n"
+            "  \"personality\": \"Descripcion de personalidad breve, pero asegurate que encaje con la persona.\",\n"
             "  \"secrets\": \"Un secreto interesante que tiene\",\n"
             "  \"relationship_to_party\": \"aliado | enemigo | neutral\",\n"
+            "  \"skills\": \"Percepcion +2, Persuasion +4 (o vacio)\",\n"
             "  \"stats\": {\n"
-            "    \"CR\": 1,\n"
+            "    \"STR\": \"+1\",\n"
+            "    \"DEX\": \"0\",\n"
+            "    \"CON\": \"+2\",\n"
+            "    \"INT\": \"-1\",\n"
+            "    \"WIS\": \"0\",\n"
+            "    \"CHA\": \"+1\",\n"
             "    \"HP\": 30,\n"
-            "    \"AC\": 12\n"
+            "    \"AC\": 12,\n"
+            "    \"CR\": 1\n"
             "  }\n"
             "}"
         )
@@ -307,6 +314,23 @@ class GeminiService:
     # ========================================================================
     # OCR: Hoja de personaje
     # ========================================================================
+
+    async def generate_npc_trait(self, context_str: str) -> str:
+        """Genera un rasgo de personalidad distintivo y aleatorio para un NPC."""
+        prompt = (
+            f"Basado en este NPC:\n{context_str}\n\n"
+            "Genera UN ÚNICO rasgo distintivo, manía, hábito o característica física muy breve para rolearlo de inmediato. "
+            "Ejemplos: Habla muy rápido, Huele fuertemente a lavanda, Tiene un tic en el ojo izquierdo. "
+            "No uses comillas. Solo la frase."
+        )
+        def _call():
+            return self.model.generate_content(prompt)
+        try:
+            response = await asyncio.to_thread(_call)
+            return response.text.strip().replace('\"', '')
+        except Exception as e:
+            logger.error(f"Error generando rasgo: {e}")
+            return "Tiene un tic nervioso"
 
     async def ocr_character_sheet(self, image_url: str) -> dict:
         """OCR de hoja de personaje D&D 5e con Gemini Vision"""
