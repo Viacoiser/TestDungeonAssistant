@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { authAPI } from '../services/api'
 import { useAuthStore } from '../store/useAuthStore'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mail, Lock, ArrowRight, Shield, User, KeyRound } from 'lucide-react'
+import { Mail, Lock, ArrowRight, FlameKindling, User, KeyRound } from 'lucide-react'
 import bgDungeon from '../assets/bg_dungeon.png'
 
 export default function Login() {
@@ -126,7 +126,7 @@ export default function Login() {
             className="text-center mb-10"
           >
             <div className="inline-flex items-center justify-center p-3 rounded-full bg-orange-500/10 mb-4 border border-orange-500/20">
-              <Shield className="text-orange-500" size={32} />
+              <FlameKindling className="text-orange-500" size={32} />
             </div>
             <h2 className="font-display text-4xl text-white tracking-widest mb-2 drop-shadow-[0_0_15px_rgba(255,165,0,0.4)]">
               {isRegister ? 'JOIN THE GUILD' : 'ENTER THE KEEP'}

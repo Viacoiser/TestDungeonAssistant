@@ -45,10 +45,12 @@ export const campaignAPI = {
     api.patch(`/campaigns/${campaignId}`, data),
   delete: (campaignId) =>
     api.delete(`/campaigns/${campaignId}`),
-  join: (campaignId, role) =>
-    api.post(`/campaigns/${campaignId}/join`, { role }),
+  joinByCode: (invite_code) =>
+    api.post('/campaigns/join', { invite_code }),
   getMembers: (campaignId) =>
     api.get(`/campaigns/${campaignId}/members`),
+  regenerateCode: (campaignId) =>
+    api.post(`/campaigns/${campaignId}/regenerate-code`),
 }
 
 // Characters

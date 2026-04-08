@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Plus, BookOpen, Send, Trash2, Edit2, History, Users, Settings, MessageSquare, Theater, Camera, Mic, Upload, Image, StopCircle, Play } from 'lucide-react'
 import { campaignAPI, sessionAPI, npcAPI, assistantAPI } from '../services/api'
+import { useAuthStore } from '../store/useAuthStore'
 
 // ============================================================================
 // Iconos inline SVG para evitar dependencias extra
@@ -52,12 +55,19 @@ const Icon = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
   ),
+  users: () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+  ),
+  ocr: () => <Camera className="w-5 h-5" />,
+  voice: () => <Mic className="w-5 h-5" />,
 }
 
 // ============================================================================
 // Tab: Notas de Sesión (con análisis IA)
 // ============================================================================
-function NotesTab({ campaignId }) {
+export function NotesTab({ campaignId }) {
   const [sessions, setSessions] = useState([])
   const [activeSession, setActiveSession] = useState(null)
   const [notes, setNotes] = useState([])
@@ -222,231 +232,221 @@ function NotesTab({ campaignId }) {
   }
 
   return (
-    <div className="flex gap-4 h-full">
-      {/* Lista de sesiones */}
-      <div className="w-48 flex-shrink-0">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-semibold text-purple-300 uppercase tracking-wider">Sesiones</span>
-          <button
-            onClick={handleCreateSession}
-            disabled={creatingSession}
-            className="p-1 rounded bg-purple-600/40 hover:bg-purple-600/70 text-purple-300 transition"
-            title="Nueva sesión"
-          >
-            <Icon.plus />
-          </button>
-        </div>
-        {createSessionError && (
-          <div className="mb-2 bg-red-900/30 border border-red-500/30 rounded-lg px-2 py-1.5 text-xs text-red-300">
-            ⚠️ {createSessionError}
-          </div>
-        )}
-        {loadingSessions ? (
-          <div className="text-gray-500 text-sm">Cargando...</div>
-        ) : sessions.length === 0 ? (
-          <div className="text-gray-500 text-sm text-center py-6">
-            <div className="text-2xl mb-2">📜</div>
-            <p>Sin sesiones</p>
-            <button
-              onClick={handleCreateSession}
-              disabled={creatingSession}
-              className="mt-2 text-purple-400 hover:text-purple-300 text-xs underline disabled:opacity-50"
-            >
-              {creatingSession ? 'Creando...' : 'Crear Sesión 1'}
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-1">
-            {sessions.map(s => (
-              <div
-                key={s.id}
-                className={`group flex items-center gap-1 rounded-lg transition ${activeSession?.id === s.id ? 'bg-purple-600/60' : 'hover:bg-gray-700/50'
-                  }`}
+    <div className="flex-1 overflow-hidden relative">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={campaignId}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="flex flex-col md:flex-row h-full"
+        >
+          {/* Sidebar de Sesiones */}
+          <div className="w-full md:w-64 border-b md:border-b-0 md:border-r border-white/5 p-4 md:p-6 flex flex-col gap-4 md:gap-6 overflow-y-auto min-h-0">
+            <div className="flex items-center justify-between">
+              <h4 className="text-[10px] uppercase tracking-widest text-fantasy-accent/60 font-bold">Sesiones</h4>
+              <button
+                onClick={handleCreateSession}
+                disabled={creatingSession}
+                className="p-1.5 bg-fantasy-accent/20 text-fantasy-accent rounded hover:bg-fantasy-accent/30 transition-colors disabled:opacity-50"
               >
-                <button
-                  onClick={() => selectSession(s)}
-                  className="flex-1 text-left px-3 py-2 text-sm"
-                >
-                  <div className={`font-medium ${activeSession?.id === s.id ? 'text-white' : 'text-gray-300'}`}>
-                    {s.is_active && <span className="inline-block w-2 h-2 rounded-full bg-green-400 mr-1" />}
-                    {s.title || `Sesión ${s.session_number}`}
-                  </div>
-                  {s.summary && (
-                    <div className="text-xs text-gray-400 mt-0.5 truncate">{s.summary}</div>
-                  )}
-                </button>
-                {/* Botón eliminar — visible al hacer hover */}
-                <button
-                  onClick={(e) => openDeleteModal(e, s)}
-                  className="opacity-0 group-hover:opacity-100 p-1 mr-1 rounded text-gray-500 hover:text-red-400 transition"
-                  title="Eliminar sesión"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
+                <Plus size={14} />
+              </button>
+            </div>
+
+            {createSessionError && (
+              <div className="bg-red-900/30 border border-red-500/30 rounded-lg px-2 py-1.5 text-xs text-red-300">
+                ⚠️ {createSessionError}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            )}
 
-      {/* Panel de notas */}
-      <div className="flex-1 flex flex-col min-h-0">
-        {!activeSession ? (
-          <div className="flex-1 flex items-center justify-center text-gray-500">
-            <div className="text-center">
-              <div className="text-4xl mb-3">📖</div>
-              <p>Selecciona una sesión para ver sus notas</p>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="mb-3 flex items-center gap-2">
-              <h3 className="text-white font-semibold">
-                {activeSession.title || `Sesión ${activeSession.session_number}`}
-              </h3>
-              {activeSession.is_active && (
-                <span className="px-2 py-0.5 text-xs bg-green-500/20 text-green-400 border border-green-500/30 rounded-full">
-                  En curso
-                </span>
-              )}
-            </div>
-
-            {/* Lista de notas */}
-            <div className="flex-1 overflow-y-auto space-y-3 mb-3 min-h-0">
-              {notes.length === 0 ? (
-                <div className="text-gray-500 text-sm text-center py-8">
-                  Sin notas en esta sesión. ¡Escribe la primera!
+            <div className="flex flex-col gap-2">
+              {loadingSessions ? (
+                <div className="text-gray-500 text-sm">Cargando...</div>
+              ) : sessions.length === 0 ? (
+                <div className="text-gray-500 text-sm text-center py-6">
+                  <p>Sin sesiones</p>
                 </div>
               ) : (
-                notes.map(note => (
-                  <div key={note.id} className="bg-gray-800/60 rounded-lg p-4 border border-gray-700/50 group relative">
-                    {/* Botones de acción note */}
-                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition flex gap-3 bg-gray-800/80 px-2 py-1 rounded">
-                      <button onClick={() => handleStartEditNote(note)} className="text-gray-400 hover:text-purple-400" title="Editar nota">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                      </button>
-                      <button onClick={() => handleDeleteNote(note.id)} className="text-gray-400 hover:text-red-400" title="Eliminar nota">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </button>
+                sessions.map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => selectSession(s)}
+                    className={`group relative text-left px-4 py-2 rounded-lg transition-colors text-sm ${activeSession?.id === s.id
+                      ? 'bg-[var(--fantasy-accent)]/30 text-[var(--fantasy-gold)]'
+                      : 'bg-white/5 text-[var(--fantasy-gold-muted)] hover:bg-white/10'
+                      }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {s.is_active && <span className="w-1.5 h-1.5 rounded-full bg-green-400" />}
+                      <span className="truncate">{s.title || `Sesión ${s.session_number}`}</span>
                     </div>
-
-                    {editingNoteId === note.id ? (
-                      <div className="mt-1">
-                        <textarea
-                          value={editNoteText}
-                          onChange={e => setEditNoteText(e.target.value)}
-                          className="w-full bg-gray-900 border border-purple-500/30 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-400 resize-none min-h-[80px]"
-                        />
-                        <div className="flex justify-end gap-2 mt-2">
-                          <button onClick={handleCancelEditNote} className="px-3 py-1 text-xs text-gray-400 hover:text-white transition">Cancelar</button>
-                          <button onClick={() => handleUpdateNote(note.id)} disabled={updatingNote || !editNoteText.trim()} className="px-3 py-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded text-xs transition">
-                            {updatingNote ? 'Guardando...' : 'Re-analizar y Guardar'}
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="text-gray-200 text-sm whitespace-pre-wrap pr-12">{note.content}</p>
-
-                        {note.detected_items?.length > 0 && (
-                          <div className="mt-3 flex flex-wrap gap-1">
-                            {note.detected_items.map((item, i) => (
-                              <span
-                                key={i}
-                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${item.is_magical
-                                  ? 'bg-purple-500/25 text-purple-300 border border-purple-500/40'
-                                  : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                  }`}
-                              >
-                                {item.is_magical && <Icon.magic />}
-                                {item.item_name} {item.quantity > 1 && `×${item.quantity}`}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-
-                        {note.detected_npcs?.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-1">
-                            {note.detected_npcs.map((npc, i) => (
-                              <span
-                                key={i}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                              >
-                                👤 {npc.name}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-
-                        <div className="text-xs text-gray-500 mt-2">
-                          {new Date(note.created_at).toLocaleString('es-CL')}
-                        </div>
-                      </>
-                    )}
-                  </div>
+                    {/* Botón eliminar sesión */}
+                    <button
+                      onClick={(e) => openDeleteModal(e, s)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 rounded hover:text-red-400 transition"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </button>
                 ))
               )}
             </div>
+          </div>
 
-            {/* Resultado del análisis IA */}
-            {analysis && (
-              <div className="mb-3 bg-purple-900/30 border border-purple-500/40 rounded-lg p-3 text-sm">
-                <div className="text-purple-300 font-semibold mb-1">🤖 Gemini detectó:</div>
-                <div className="flex flex-wrap gap-2">
-                  {analysis.detected_items.map((item, i) => (
-                    <span key={i} className="bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded text-xs border border-amber-500/30">
-                      📦 {item.item_name}
-                    </span>
-                  ))}
-                  {analysis.detected_npcs.map((npc, i) => (
-                    <span key={i} className="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded text-xs border border-blue-500/30">
-                      👤 {npc.name}
-                    </span>
-                  ))}
-                  {analysis.items_count === 0 && analysis.npcs_count === 0 && (
-                    <span className="text-gray-400 text-xs">Ningún ítem o NPC detectado en esta nota.</span>
+          {/* Panel de Contenido / Notas */}
+          <div className="flex-1 flex flex-col min-h-0 relative">
+            {!activeSession ? (
+              <div className="flex-1 flex items-center justify-center text-fantasy-gold/20 flex-col gap-4">
+                <BookOpen size={48} />
+                <p className="text-sm">Selecciona una sesión para ver sus notas</p>
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col p-4 md:p-6 min-h-0 overflow-hidden">
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-white font-semibold">
+                      {activeSession.title || `Sesión ${activeSession.session_number}`}
+                    </h3>
+                    {activeSession.is_active && (
+                      <span className="px-2 py-0.5 text-[10px] bg-green-500/10 text-green-400 border border-green-500/20 rounded-full font-bold uppercase">
+                        En curso
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Lista de notas */}
+                <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 custom-scrollbar">
+                  {notes.length === 0 ? (
+                    <div className="text-gray-500 text-sm text-center py-12">
+                      <div className="text-3xl mb-2 opacity-20">📜</div>
+                      <p>Sin notas en esta sesión. ¡Escribe la primera!</p>
+                    </div>
+                  ) : (
+                    notes.map(note => (
+                      <div key={note.id} className="bg-white/5 rounded-xl p-4 border border-white/5 group relative hover:border-white/10 transition-colors">
+                        {/* Botones de acción note */}
+                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition flex gap-2 bg-black/40 px-1.5 py-1 rounded-lg border border-white/5 backdrop-blur-sm">
+                          <button onClick={() => handleStartEditNote(note)} className="text-gray-400 hover:text-fantasy-accent" title="Editar nota">
+                            <Edit2 size={14} />
+                          </button>
+                          <button onClick={() => handleDeleteNote(note.id)} className="text-gray-400 hover:text-red-400" title="Eliminar nota">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+
+                        {editingNoteId === note.id ? (
+                          <div className="mt-1">
+                            <textarea
+                              value={editNoteText}
+                              onChange={e => setEditNoteText(e.target.value)}
+                              className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-[var(--fantasy-gold)] text-sm focus:outline-none focus:border-[var(--fantasy-accent)]/50 resize-none min-h-[100px]"
+                            />
+                            <div className="flex justify-end gap-2 mt-2">
+                              <button onClick={handleCancelEditNote} className="px-3 py-1 text-xs text-[var(--fantasy-gold-muted)] hover:text-[var(--fantasy-gold)] transition">Cancelar</button>
+                              <button onClick={() => handleUpdateNote(note.id)} disabled={updatingNote || !editNoteText.trim()} className="px-3 py-1 bg-[var(--fantasy-accent)] hover:bg-[#e86424] disabled:opacity-50 text-white rounded-lg text-xs transition fantasy-button-glow">
+                                {updatingNote ? 'Guardando...' : 'Re-analizar y Guardar'}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <p className="text-[var(--fantasy-gold)]/90 text-sm whitespace-pre-wrap pr-12 leading-relaxed">{note.content}</p>
+
+                            {note.detected_items?.length > 0 && (
+                              <div className="mt-3 flex flex-wrap gap-1.5">
+                                {note.detected_items.map((item, i) => (
+                                  <span
+                                    key={i}
+                                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${item.is_magical
+                                      ? 'bg-purple-500/10 text-purple-300 border border-purple-500/20'
+                                      : 'bg-fantasy-accent/10 text-fantasy-accent border border-fantasy-accent/20'
+                                      }`}
+                                  >
+                                    {item.is_magical && <span className="text-[8px]">✨</span>}
+                                    {item.item_name} {item.quantity > 1 && `×${item.quantity}`}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            {note.detected_npcs?.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {note.detected_npcs.map((npc, i) => (
+                                  <span
+                                    key={i}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-300 border border-blue-500/20"
+                                  >
+                                    👤 {npc.name}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            <div className="text-[10px] text-white/20 mt-3 font-medium">
+                              {new Date(note.created_at).toLocaleString('es-CL')}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ))
                   )}
+                </div>
+
+                {/* Resultado del análisis IA flotante o integrado */}
+                {analysis && (
+                  <div className="mb-4 bg-fantasy-accent/10 border border-fantasy-accent/20 rounded-xl p-3 text-sm animate-in fade-in slide-in-from-bottom-2">
+                    <div className="text-fantasy-accent/80 font-bold text-[10px] uppercase tracking-widest mb-2 flex items-center gap-2">
+                      <span className="animate-pulse">🤖</span> Gemini detectó:
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {analysis.detected_items.map((item, i) => (
+                        <span key={i} className="bg-fantasy-accent/10 text-fantasy-accent px-2 py-0.5 rounded-lg text-[10px] font-bold border border-fantasy-accent/20">
+                          📦 {item.item_name}
+                        </span>
+                      ))}
+                      {analysis.detected_npcs.map((npc, i) => (
+                        <span key={i} className="bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded-lg text-[10px] font-bold border border-blue-500/20">
+                          👤 {npc.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Input de nota */}
+                <div className="mt-auto">
+                  <div className="flex gap-2 bg-white/5 p-2 rounded-2xl border border-white/5 focus-within:border-fantasy-accent/30 transition-colors">
+                    <textarea
+                      value={noteText}
+                      onChange={e => setNoteText(e.target.value)}
+                      placeholder="Escribe la nota de sesión..."
+                      rows={2}
+                      className="flex-1 bg-transparent border-none rounded-xl px-4 py-2 text-[var(--fantasy-gold)] text-sm placeholder-[var(--fantasy-gold-muted)]/50 focus:outline-none resize-none"
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && e.ctrlKey) handleAddNote()
+                      }}
+                    />
+                    <button
+                      onClick={handleAddNote}
+                      disabled={sending || !noteText.trim()}
+                      className="w-12 h-12 flex items-center justify-center bg-fantasy-accent text-white rounded-xl hover:bg-[#e86424] active:scale-95 disabled:opacity-40 transition-all fantasy-button-glow flex-shrink-0"
+                    >
+                      {sending ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Send size={18} />
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-white/20 mt-2 text-center uppercase tracking-widest font-bold">Ctrl+Enter para enviar</p>
                 </div>
               </div>
             )}
-
-            {/* Error al enviar nota */}
-            {sendError && (
-              <div className="mb-2 bg-red-900/30 border border-red-500/30 rounded-lg px-3 py-2 text-xs text-red-300">
-                ⚠️ {sendError}
-              </div>
-            )}
-
-            {/* Input de nota */}
-            <div className="flex gap-2">
-              <textarea
-                value={noteText}
-                onChange={e => setNoteText(e.target.value)}
-                placeholder="Escribe la nota de sesión... Gemini detectará ítems y NPCs automáticamente."
-                rows={3}
-                className="flex-1 bg-gray-800 border border-purple-500/30 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-purple-400 resize-none"
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && e.ctrlKey) handleAddNote()
-                }}
-              />
-              <button
-                onClick={handleAddNote}
-                disabled={sending || !noteText.trim()}
-                className="px-4 bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white rounded-lg transition flex items-center gap-1 text-sm font-medium"
-              >
-                {sending ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Icon.send />
-                )}
-              </button>
-            </div>
-            <p className="text-xs text-gray-500 mt-1">Ctrl+Enter para enviar</p>
-          </>
-        )}
-      </div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
 
       {/* Modal de confirmación de eliminación */}
       {deleteModal && (
@@ -454,53 +454,40 @@ function NotesTab({ campaignId }) {
           <div className="bg-gray-900 border border-red-500/40 rounded-xl p-6 max-w-md w-full shadow-2xl">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-400">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
+                <Trash2 size={20} />
               </div>
               <div>
                 <h3 className="text-white font-bold text-lg">Eliminar sesión</h3>
                 <p className="text-gray-400 text-sm">Esta acción no se puede deshacer</p>
               </div>
             </div>
-
             <p className="text-gray-300 text-sm mb-4">
               Se eliminarán la sesión y <span className="text-red-300 font-medium">todas sus notas</span> permanentemente.
               Para confirmar, escribí el nombre exacto de la sesión:
             </p>
-
             <div className="bg-gray-800 rounded-lg px-3 py-2 mb-3 text-center">
-              <span className="text-purple-300 font-mono font-semibold">
+              <span className="text-[var(--fantasy-gold)] font-mono font-semibold">
                 {deleteModal.title || `Sesión ${deleteModal.session_number}`}
               </span>
             </div>
-
             <input
               type="text"
               value={deleteConfirmText}
               onChange={e => setDeleteConfirmText(e.target.value)}
-              placeholder="Escribí el nombre aquí..."
+              placeholder="Escribe el nombre aquí..."
               autoFocus
-              className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-red-400 mb-4"
+              className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-400 mb-4"
               onKeyDown={e => {
                 if (e.key === 'Enter') handleDeleteSession()
                 if (e.key === 'Escape') closeDeleteModal()
               }}
             />
-
             <div className="flex gap-3">
-              <button
-                onClick={closeDeleteModal}
-                className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition"
-              >
-                Cancelar
-              </button>
+              <button onClick={closeDeleteModal} className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition">Cancelar</button>
               <button
                 onClick={handleDeleteSession}
-                disabled={
-                  deleteConfirmText !== (deleteModal.title || `Sesión ${deleteModal.session_number}`) || deleting
-                }
-                className="flex-1 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition"
+                disabled={deleteConfirmText !== (deleteModal.title || `Sesión ${deleteModal.session_number}`) || deleting}
+                className="flex-1 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white text-sm font-medium rounded-lg transition"
               >
                 {deleting ? 'Eliminando...' : 'Eliminar sesión'}
               </button>
@@ -515,7 +502,7 @@ function NotesTab({ campaignId }) {
 // ============================================================================
 // Tab: NPCs
 // ============================================================================
-function NpcsTab({ campaignId }) {
+export function NpcsTab({ campaignId, isGM = false }) {
   const [npcs, setNpcs] = useState([])
   const [loading, setLoading] = useState(true)
   const [prompt, setPrompt] = useState('')
@@ -628,9 +615,14 @@ function NpcsTab({ campaignId }) {
 
   return (
     <div className="flex gap-4 h-full">
+      {!isGM && (
+        <div className="absolute top-0 left-0 right-0 bg-amber-900/30 border border-amber-500/30 rounded-lg px-4 py-2 text-xs text-amber-300 mb-2" style={{ position: 'relative', marginBottom: '0.75rem' }}>
+          ⚔️ Modo Jugador — Solo el GM puede generar o editar NPCs.
+        </div>
+      )}
       {/* Lista de NPCs */}
       <div className="w-52 flex-shrink-0 flex flex-col">
-        <span className="text-xs font-semibold text-purple-300 uppercase tracking-wider mb-3">NPCs de campaña</span>
+        <span className="text-xs font-semibold text-[var(--fantasy-gold)] uppercase tracking-wider mb-3">NPCs de campaña</span>
 
         {loading ? (
           <div className="text-gray-500 text-sm">Cargando...</div>
@@ -647,8 +639,8 @@ function NpcsTab({ campaignId }) {
                   key={npc.id}
                   onClick={() => setSelectedNpc(npc)}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${selectedNpc?.id === npc.id
-                    ? 'bg-purple-600/60 text-white'
-                    : 'text-gray-300 hover:bg-gray-700/50'
+                    ? 'bg-[var(--fantasy-accent)]/30 text-[var(--fantasy-gold)]'
+                    : 'text-[var(--fantasy-gold-muted)] hover:bg-white/5'
                     }`}
                 >
                   <div className="flex items-center gap-2">
@@ -662,35 +654,37 @@ function NpcsTab({ campaignId }) {
           </div>
         )}
 
-        {/* Generar NPC */}
-        <div className="border-t border-gray-700/50 pt-3">
-          <textarea
-            value={prompt}
-            onChange={e => setPrompt(e.target.value)}
-            placeholder="Ej: Un mercader enano corrupto..."
-            rows={3}
-            className="w-full bg-gray-800 border border-purple-500/30 rounded-lg px-3 py-2 text-white text-xs placeholder-gray-500 focus:outline-none focus:border-purple-400 resize-none"
-          />
-          <button
-            onClick={handleGenerate}
-            disabled={generating || !prompt.trim()}
-            className="w-full mt-2 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white text-sm font-medium rounded-lg transition flex items-center justify-center gap-2"
-          >
-            {generating ? (
-              <>
-                <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Generando...
-              </>
-            ) : (
-              <>✨ Generar NPC</>
+        {/* Generar NPC — Solo GM */}
+        {isGM && (
+          <div className="border-t border-gray-700/50 pt-3">
+            <textarea
+              value={prompt}
+              onChange={e => setPrompt(e.target.value)}
+              placeholder="Ej: Un mercader enano corrupto..."
+              rows={3}
+              className="w-full bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.1)] rounded-lg px-3 py-2 text-[var(--fantasy-gold)] text-xs placeholder-[var(--fantasy-gold-muted)] focus:outline-none focus:border-[var(--fantasy-accent)]/50 resize-none transition-colors"
+            />
+            <button
+              onClick={handleGenerate}
+              disabled={generating || !prompt.trim()}
+              className="w-full mt-2 py-2 bg-[var(--fantasy-accent)] hover:bg-[#e86424] disabled:opacity-40 text-white text-sm font-medium rounded-lg transition flex items-center justify-center gap-2 fantasy-button-glow"
+            >
+              {generating ? (
+                <>
+                  <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Generando...
+                </>
+              ) : (
+                <>✨ Generar NPC</>
+              )}
+            </button>
+            {generateError && (
+              <div className="mt-2 bg-red-900/30 border border-red-500/30 rounded-lg px-2 py-1.5 text-xs text-red-300">
+                ⚠️ {generateError}
+              </div>
             )}
-          </button>
-          {generateError && (
-            <div className="mt-2 bg-red-900/30 border border-red-500/30 rounded-lg px-2 py-1.5 text-xs text-red-300">
-              ⚠️ {generateError}
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Detalle del NPC */}
@@ -752,7 +746,9 @@ function NpcsTab({ campaignId }) {
                   </>
                 ) : (
                   <>
-                    <button onClick={startEditing} className="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 text-white rounded transition border border-gray-600"> Editar</button>
+                    {isGM && (
+                      <button onClick={startEditing} className="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 text-white rounded transition border border-gray-600"> Editar</button>
+                    )}
                     <span className={`capitalize px-2 py-0.5 text-xs border rounded-full ${relationColors[selectedNpc.relationship_to_party] || relationColors.desconocido}`}>
                       {selectedNpc.relationship_to_party || 'desconocido'}
                     </span>
@@ -932,7 +928,7 @@ function NpcsTab({ campaignId }) {
 // ============================================================================
 // Tab: Asistente Chat (RAG)
 // ============================================================================
-function AssistantTab({ campaignId }) {
+export function AssistantTab({ campaignId }) {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -978,15 +974,14 @@ function AssistantTab({ campaignId }) {
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             {msg.role === 'assistant' && (
-              <div className="w-8 h-8 rounded-full bg-purple-600/50 border border-purple-500/50 flex items-center justify-center mr-2 flex-shrink-0 mt-1 text-sm">
-                🐉
+              <div className="w-8 h-8 rounded-full bg-[var(--fantasy-accent)]/30 border border-[var(--fantasy-accent)]/50 flex items-center justify-center mr-2 flex-shrink-0 mt-1 text-sm text-[var(--fantasy-gold)]">
               </div>
             )}
             <div className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${msg.role === 'user'
-              ? 'bg-purple-600/70 text-white rounded-tr-sm'
+              ? 'bg-[var(--fantasy-accent)]/20 text-[var(--fantasy-gold)] border border-[var(--fantasy-accent)]/30 rounded-tr-sm'
               : msg.error
                 ? 'bg-red-900/30 border border-red-500/30 text-red-200 rounded-tl-sm'
-                : 'bg-gray-700/70 text-gray-100 border border-gray-600/50 rounded-tl-sm'
+                : 'bg-white/5 text-[var(--fantasy-gold-muted)] border border-white/10 rounded-tl-sm'
               }`}>
               <p className="whitespace-pre-wrap">{msg.text}</p>
             </div>
@@ -994,14 +989,13 @@ function AssistantTab({ campaignId }) {
         ))}
 
         {loading && (
-          <div className="flex items-center gap-2 text-gray-400 text-sm">
-            <div className="w-8 h-8 rounded-full bg-purple-600/50 border border-purple-500/50 flex items-center justify-center text-sm">
-              🐉
+          <div className="flex items-center gap-2 text-[var(--fantasy-gold-muted)] text-sm">
+            <div className="w-8 h-8 rounded-full bg-[var(--fantasy-accent)]/30 border border-[var(--fantasy-accent)]/50 flex items-center justify-center text-sm">
             </div>
             <div className="flex gap-1">
-              <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <div className="w-2 h-2 bg-[var(--fantasy-accent)] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <div className="w-2 h-2 bg-[var(--fantasy-accent)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="w-2 h-2 bg-[var(--fantasy-accent)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
           </div>
         )}
@@ -1016,12 +1010,12 @@ function AssistantTab({ campaignId }) {
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
           placeholder="¿Quién es Aldric el Sombrío? ¿Qué pasó en la sesión 2?..."
-          className="flex-1 bg-gray-800 border border-purple-500/30 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-purple-400"
+          className="flex-1 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-xl px-4 py-3 text-[var(--fantasy-gold)] text-sm placeholder-[var(--fantasy-gold-muted)] focus:outline-none focus:border-[var(--fantasy-accent)]/50 transition-colors"
         />
         <button
           onClick={handleSend}
           disabled={loading || !input.trim()}
-          className="px-4 py-3 bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white rounded-xl transition"
+          className="px-4 py-3 bg-[var(--fantasy-accent)] hover:bg-[#e86424] disabled:opacity-40 text-white rounded-xl transition fantasy-button-glow"
         >
           <Icon.send />
         </button>
@@ -1033,18 +1027,26 @@ function AssistantTab({ campaignId }) {
 // ============================================================================
 // Tab: Configuración de Campaña
 // ============================================================================
-function SettingsTab({ campaign, onUpdate }) {
+export function SettingsTab({ campaign, onUpdate, isGM = false }) {
   const [name, setName] = useState(campaign?.name || '')
   const [description, setDescription] = useState(campaign?.description || '')
   const [loreSummary, setLoreSummary] = useState(campaign?.lore_summary || '')
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState('')
+  const [codeCopied, setCodeCopied] = useState(false)
   const navigate = useNavigate()
 
   // Modal eliminar
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [deleting, setDeleting] = useState(false)
+
+  const handleCopyCode = () => {
+    if (!currentCode) return
+    navigator.clipboard.writeText(currentCode)
+    setCodeCopied(true)
+    setTimeout(() => setCodeCopied(false), 2000)
+  }
 
   const handleSave = async () => {
     setSaving(true)
@@ -1077,8 +1079,128 @@ function SettingsTab({ campaign, onUpdate }) {
     }
   }
 
+  if (!isGM) {
+    return (
+      <div className="max-w-2xl mx-auto flex flex-col gap-6 h-full overflow-y-auto pr-2 pb-8">
+        <div className="bg-amber-900/20 border border-amber-500/30 rounded-xl p-6 text-center">
+          <div className="text-3xl mb-3">⚔️</div>
+          <h3 className="text-white font-bold text-lg mb-2">Modo Jugador</h3>
+          <p className="text-gray-400 text-sm">Solo el Dungeon Master puede acceder a la configuración de la campaña.</p>
+        </div>
+      </div>
+    )
+  }
+
+  const [currentCode, setCurrentCode] = useState(campaign?.invite_code || null)
+  const [generatingCode, setGeneratingCode] = useState(false)
+
+  const handleGenerateCode = async () => {
+    setGeneratingCode(true)
+    try {
+      const res = await campaignAPI.regenerateCode(campaign.id)
+      setCurrentCode(res.data.invite_code)
+      if (onUpdate) onUpdate({ ...campaign, invite_code: res.data.invite_code })
+    } catch (e) {
+      console.error('Error generando código:', e)
+    } finally {
+      setGeneratingCode(false)
+    }
+  }
+
+  const [showCode, setShowCode] = React.useState(false)
+
   return (
     <div className="max-w-2xl mx-auto flex flex-col gap-6 h-full overflow-y-auto pr-2 pb-8">
+
+      {/* ── Código de invitación ── */}
+      <div className="bg-gray-800/50 rounded-xl border border-yellow-500/30 p-6">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+          <h3 className="text-sm font-semibold text-yellow-400 uppercase tracking-wider" style={{ margin: 0 }}>
+            Código de Invitación
+          </h3>
+          {currentCode && (
+            <button
+              onClick={() => setShowCode(v => !v)}
+              style={{
+                background: 'none', border: 'none',
+                color: '#a78bfa', fontSize: '0.8rem',
+                fontWeight: 600, cursor: 'pointer'
+              }}
+            >
+              {showCode ? '👁 Ocultar' : '🔑 Ver código'}
+            </button>
+          )}
+        </div>
+        <p className="text-gray-400 text-sm" style={{ marginBottom: '1rem' }}>
+          Comparte este código con tus jugadores para que puedan unirse a la campaña.
+        </p>
+
+        {currentCode ? (
+          <>
+            <div style={{
+              maxHeight: showCode ? '120px' : '0',
+              opacity: showCode ? 1 : 0,
+              overflow: 'hidden',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              pointerEvents: showCode ? 'auto' : 'none',
+              marginBottom: showCode ? '1.5rem' : '0'
+            }}>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 bg-black/40 border border-yellow-500/30 rounded-xl px-5 py-3 text-center">
+                  <span style={{ fontFamily: 'monospace', fontSize: '1.6rem', fontWeight: 800, letterSpacing: '0.3em', color: '#fbbf24' }}>
+                    {currentCode}
+                  </span>
+                </div>
+                <button
+                  onClick={handleCopyCode}
+                  style={{
+                    background: codeCopied ? 'rgba(34,197,94,0.2)' : 'rgba(251,191,36,0.15)',
+                    border: `1px solid ${codeCopied ? 'rgba(34,197,94,0.5)' : 'rgba(251,191,36,0.4)'}`,
+                    color: codeCopied ? '#86efac' : '#fbbf24',
+                    borderRadius: 10, padding: '0.5rem 1rem',
+                    fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem',
+                    whiteSpace: 'nowrap', transition: 'all 0.2s'
+                  }}
+                >
+                  {codeCopied ? 'Copiado!' : 'Copiar'}
+                </button>
+              </div>
+            </div>
+            <button
+              onClick={handleGenerateCode}
+              disabled={generatingCode}
+              title="El código anterior dejará de funcionar"
+              style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: '#6b7280', borderRadius: 8,
+                padding: '0.4rem 0.9rem', fontWeight: 600,
+                cursor: 'pointer', fontSize: '0.75rem', transition: 'all 0.2s'
+              }}
+            >
+              {generatingCode ? '⏳ Generando...' : 'Generar nuevo código'}
+            </button>
+          </>
+        ) : (
+          <div className="text-center py-4">
+            <p className="text-gray-500 text-sm mb-3">Esta campaña aún no tiene código de invitación.</p>
+            <button
+              onClick={handleGenerateCode}
+              disabled={generatingCode}
+              style={{
+                background: 'rgba(251,191,36,0.15)',
+                border: '1px solid rgba(251,191,36,0.4)',
+                color: '#fbbf24', borderRadius: 10,
+                padding: '0.65rem 1.5rem', fontWeight: 700,
+                cursor: 'pointer', fontSize: '0.95rem', transition: 'all 0.2s'
+              }}
+            >
+              {generatingCode ? '⏳ Generando...' : '✨ Generar Código de Invitación'}
+            </button>
+          </div>
+        )}
+      </div>
+
       <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6 flex flex-col gap-4">
         <h3 className="text-xl font-bold text-white mb-2">Ajustes de Campaña</h3>
 
@@ -1087,7 +1209,7 @@ function SettingsTab({ campaign, onUpdate }) {
           <input
             value={name}
             onChange={e => setName(e.target.value)}
-            className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+            className="w-full bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2 text-[var(--fantasy-gold)] placeholder-[var(--fantasy-gold-muted)] focus:outline-none focus:border-[var(--fantasy-accent)]/50 transition-colors"
           />
         </div>
 
@@ -1097,7 +1219,7 @@ function SettingsTab({ campaign, onUpdate }) {
             value={description}
             onChange={e => setDescription(e.target.value)}
             rows={2}
-            className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 resize-none"
+            className="w-full bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2 text-[var(--fantasy-gold)] placeholder-[var(--fantasy-gold-muted)] focus:outline-none focus:border-[var(--fantasy-accent)]/50 resize-none transition-colors"
           />
         </div>
 
@@ -1108,7 +1230,7 @@ function SettingsTab({ campaign, onUpdate }) {
             value={loreSummary}
             onChange={e => setLoreSummary(e.target.value)}
             rows={6}
-            className="w-full bg-gray-900 border border-purple-500/30 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 resize-none"
+            className="w-full bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2 text-[var(--fantasy-gold)] placeholder-[var(--fantasy-gold-muted)] focus:outline-none focus:border-[var(--fantasy-accent)]/50 resize-none transition-colors"
           />
         </div>
 
@@ -1116,7 +1238,7 @@ function SettingsTab({ campaign, onUpdate }) {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-6 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-medium rounded-lg transition"
+            className="px-6 py-2 bg-[var(--fantasy-accent)] hover:bg-[#e86424] disabled:opacity-50 text-white font-medium rounded-lg transition fantasy-button-glow"
           >
             {saving ? 'Guardando...' : 'Guardar Cambios'}
           </button>
@@ -1180,18 +1302,98 @@ function SettingsTab({ campaign, onUpdate }) {
 // ============================================================================
 // CampaignView — Pantalla principal
 // ============================================================================
+// ============================================================================
+// Tab: Miembros de la Campaña
+// ============================================================================
+export function MembersTab({ campaignId }) {
+  const [members, setMembers] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await campaignAPI.getMembers(campaignId)
+        setMembers(res.data?.members || [])
+      } catch (e) {
+        console.error('Error cargando miembros:', e)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [campaignId])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-3 border-purple-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto py-4">
+      <div className="bg-gray-800/40 rounded-2xl border border-gray-700/50 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-700/50 bg-gray-800/20">
+          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            <Icon.users /> Miembros de la Campaña
+          </h3>
+          <p className="text-xs text-gray-400 mt-1 uppercase tracking-wider">
+            {members.length} {members.length === 1 ? 'Usuario' : 'Usuarios'} en esta aventura
+          </p>
+        </div>
+
+        <div className="divide-y divide-gray-700/30">
+          {members.map((member, i) => {
+            const isGM = member.role === 'GM'
+            return (
+              <div key={i} className="px-6 py-4 flex items-center justify-between hover:bg-white/5 transition">
+                <div className="flex items-center gap-4">
+                  <div>
+                    <h4 className="text-white font-medium">{member.username || 'Sin nombre'}</h4>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span style={{
+                    fontSize: '0.65rem', fontWeight: 800, padding: '0.15rem 0.6rem',
+                    borderRadius: 20, border: `1px solid ${isGM ? 'rgba(251,191,36,0.4)' : 'rgba(139,92,246,0.35)'}`,
+                    background: isGM ? 'rgba(251,191,36,0.1)' : 'rgba(139,92,246,0.1)',
+                    color: isGM ? '#fbbf24' : '#a78bfa', letterSpacing: '0.05em'
+                  }}>
+                    {isGM ? 'DM' : 'Player'}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================================================
+// CampaignView — Pantalla principal
+// ============================================================================
 export default function CampaignView() {
   const { campaignId } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuthStore()
   const [campaign, setCampaign] = useState(null)
+  const [userRole, setUserRole] = useState(null) // 'GM' | 'PLAYER'
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('notes')
 
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await campaignAPI.getDetail(campaignId)
-        setCampaign(res.data)
+        const [campRes, membersRes] = await Promise.all([
+          campaignAPI.getDetail(campaignId),
+          campaignAPI.getMembers(campaignId)
+        ])
+        setCampaign(campRes.data)
+        setUserRole(membersRes.data?.user_role || 'PLAYER')
       } catch {
         navigate('/dashboard')
       } finally {
@@ -1201,11 +1403,17 @@ export default function CampaignView() {
     load()
   }, [campaignId])
 
+  const isGM = userRole === 'GM'
+
   const tabs = [
     { id: 'notes', label: 'Notas', icon: <Icon.scroll /> },
-    { id: 'npcs', label: 'NPCs', icon: <Icon.npc /> },
+    ...(isGM ? [{ id: 'npcs', label: 'NPCs', icon: <Icon.npc /> }] : []),
     { id: 'assistant', label: 'Asistente', icon: <Icon.chat /> },
-    { id: 'settings', label: 'Configuración', icon: <Icon.settings /> },
+    { id: 'ocr', label: 'OCR', icon: <Icon.ocr /> },
+    { id: 'voice', label: 'Voice', icon: <Icon.voice /> },
+    { id: 'members', label: 'Miembros', icon: <Icon.users /> },
+    // Settings solo para GM
+    ...(isGM ? [{ id: 'settings', label: 'Configuración', icon: <Icon.settings /> }] : []),
   ]
 
   if (loading) {
@@ -1228,12 +1436,23 @@ export default function CampaignView() {
             <Icon.back />
           </button>
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-white">{campaign?.name || 'Campaña'}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold text-white">{campaign?.name || 'Campaña'}</h1>
+              {userRole && (
+                <span style={{
+                  fontSize: '0.7rem', fontWeight: 700, padding: '0.15rem 0.55rem',
+                  borderRadius: 20, border: `1px solid ${isGM ? 'rgba(251,191,36,0.5)' : 'rgba(139,92,246,0.5)'}`,
+                  background: isGM ? 'rgba(251,191,36,0.15)' : 'rgba(139,92,246,0.15)',
+                  color: isGM ? '#fbbf24' : '#a78bfa', letterSpacing: '0.05em'
+                }}>
+                  {isGM ? 'GM' : 'Jugador'}
+                </span>
+              )}
+            </div>
             {campaign?.description && (
               <p className="text-sm text-gray-400 mt-0.5 truncate max-w-xl">{campaign.description}</p>
             )}
           </div>
-          <div className="text-2xl">🐉</div>
         </div>
       </header>
 
@@ -1260,12 +1479,147 @@ export default function CampaignView() {
       <main className="flex-1 overflow-hidden px-6 py-5">
         <div className="max-w-6xl mx-auto h-full">
           {activeTab === 'notes' && <NotesTab campaignId={campaignId} />}
-          {activeTab === 'npcs' && <NpcsTab campaignId={campaignId} />}
+          {activeTab === 'npcs' && <NpcsTab campaignId={campaignId} isGM={isGM} />}
           {activeTab === 'assistant' && <AssistantTab campaignId={campaignId} />}
-          {activeTab === 'settings' && <SettingsTab campaign={campaign} onUpdate={setCampaign} />}
+          {activeTab === 'ocr' && <OCRTab />}
+          {activeTab === 'voice' && <VoiceTab />}
+          {activeTab === 'members' && <MembersTab campaignId={campaignId} />}
+          {activeTab === 'settings' && <SettingsTab campaign={campaign} onUpdate={setCampaign} isGM={isGM} />}
 
         </div>
       </main>
     </div>
+  )
+}
+
+// ============================================================================
+// Tab: OCR — Leer Imagen (Frontend Only)
+// ============================================================================
+export function OCRTab() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      className="p-8 overflow-y-auto h-full"
+    >
+      <div className="max-w-2xl mx-auto flex flex-col gap-8">
+        <div className="text-center">
+          <h3 className="font-serif text-2xl font-bold text-white mb-2 underline decoration-purple-500/30">OCR — Leer Imagen</h3>
+          <p className="text-sm text-gray-400">Sube una foto de tus notas, mapas o libros para extraer el texto automáticamente.</p>
+        </div>
+
+        {/* Drop Zone */}
+        <label
+          htmlFor="ocr-file-input"
+          className="group flex flex-col items-center justify-center gap-6 border-2 border-dashed border-purple-500/40 hover:border-purple-500/80 bg-purple-500/5 hover:bg-purple-500/10 rounded-2xl p-12 cursor-pointer transition-all duration-300"
+        >
+          <div className="w-20 h-20 rounded-full bg-purple-500/20 group-hover:bg-purple-500/30 flex items-center justify-center transition-all duration-300">
+            <Camera size={36} className="text-purple-400" />
+          </div>
+          <div className="text-center">
+            <p className="font-bold text-gray-200 text-lg mb-1">Arrastra una imagen aquí</p>
+            <p className="text-sm text-gray-500">o haz clic para seleccionar un archivo</p>
+            <p className="text-[10px] text-gray-600 mt-2 uppercase tracking-widest">PNG · JPG · WEBP · PDF</p>
+          </div>
+          <div className="flex items-center gap-3 px-6 py-2.5 bg-purple-500/20 border border-purple-500/40 rounded-xl text-purple-300 font-bold text-sm group-hover:bg-purple-500/30 transition-all">
+            <Upload size={16} />
+            Seleccionar Archivo
+          </div>
+          <input id="ocr-file-input" type="file" accept="image/*,.pdf" className="hidden" />
+        </label>
+
+        {/* Preview placeholder */}
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
+          <div className="flex items-center gap-3 mb-2">
+            <Image size={18} className="text-gray-500" />
+            <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Vista Previa / Resultado</span>
+          </div>
+          <div className="min-h-[120px] flex items-center justify-center">
+            <p className="text-sm text-gray-600 italic">El texto extraído aparecerá aquí…</p>
+          </div>
+        </div>
+
+        <button className="flex items-center justify-center gap-2 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-purple-500/20 uppercase tracking-widest text-xs">
+          <Camera size={16} />
+          Analizar Imagen
+        </button>
+      </div>
+    </motion.div>
+  )
+}
+
+// ============================================================================
+// Tab: Voice — Enviar Audio (Frontend Only)
+// ============================================================================
+export function VoiceTab() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      className="p-8 overflow-y-auto h-full"
+    >
+      <div className="max-w-2xl mx-auto flex flex-col gap-8">
+        <div className="text-center">
+          <h3 className="font-serif text-2xl font-bold text-white mb-2 underline decoration-orange-500/30">Voice — Enviar Audio</h3>
+          <p className="text-sm text-gray-400">Graba o sube un audio para transcribirlo y usarlo como nota de campaña.</p>
+        </div>
+
+        {/* Recorder Card */}
+        <div className="bg-gray-800/40 border border-white/10 rounded-2xl p-8 flex flex-col items-center gap-8">
+          {/* Waveform placeholder */}
+          <div className="w-full h-16 flex items-center justify-center gap-1 px-4">
+            {Array.from({ length: 40 }).map((_, i) => (
+              <div
+                key={i}
+                className="w-1 rounded-full bg-orange-500/30"
+                style={{ height: `${20 + Math.sin(i * 0.7) * 14 + Math.cos(i * 0.4) * 10}px` }}
+              />
+            ))}
+          </div>
+
+          {/* Record Button */}
+          <button className="w-20 h-20 rounded-full bg-orange-600 hover:bg-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/30 transition-all duration-300 hover:scale-110">
+            <Mic size={32} className="text-white" />
+          </button>
+          <p className="text-xs text-gray-500 uppercase tracking-widest">Presiona para grabar</p>
+
+          {/* Controls row */}
+          <div className="flex items-center gap-4">
+            <button className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 hover:bg-white/10 text-gray-400 hover:text-white rounded-xl text-xs font-bold transition-all">
+              <Play size={14} />
+              Reproducir
+            </button>
+            <button className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 rounded-xl text-xs font-bold transition-all">
+              <StopCircle size={14} />
+              Detener
+            </button>
+          </div>
+        </div>
+
+        {/* Upload alternative */}
+        <div className="relative flex items-center gap-4">
+          <div className="flex-1 h-px bg-white/10" />
+          <span className="text-[10px] text-gray-600 uppercase tracking-widest">o súbelo directamente</span>
+          <div className="flex-1 h-px bg-white/10" />
+        </div>
+
+        <label
+          htmlFor="voice-file-input"
+          className="group flex items-center justify-center gap-3 border border-dashed border-orange-500/30 hover:border-orange-500/60 bg-orange-500/5 hover:bg-orange-500/10 rounded-xl py-5 cursor-pointer transition-all"
+        >
+          <Upload size={18} className="text-orange-400" />
+          <span className="text-sm font-bold text-orange-400">Subir archivo de audio</span>
+          <span className="text-[10px] text-gray-600 uppercase tracking-widest">MP3 · WAV · OGG · M4A</span>
+          <input id="voice-file-input" type="file" accept="audio/*" className="hidden" />
+        </label>
+
+        <button className="flex items-center justify-center gap-2 py-3 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-orange-500/20 uppercase tracking-widest text-xs">
+          <Send size={16} />
+          Enviar Audio
+        </button>
+      </div>
+    </motion.div>
   )
 }
