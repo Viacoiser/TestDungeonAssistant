@@ -2,7 +2,7 @@ import React from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../store/useAuthStore'
 import {
-  Home,
+  Castle,
   Users,
   ScrollText,
   Backpack,
@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 
 const NAV_ITEMS = [
-  { icon: Home, label: 'Inicio', id: 'home' },
+  { icon: Castle, label: 'Campañas', id: 'campaigns' },
   { icon: Users, label: 'Personajes', id: 'characters' },
   { icon: ScrollText, label: 'Rasgos', id: 'traits' },
   { icon: Backpack, label: 'Equipamento', id: 'equipment' },
@@ -35,7 +35,10 @@ export default function Sidebar({ activeTab, setActiveTab }) {
       flexShrink: 0,
     }}>
       {/* Logo */}
-      <div style={{ padding: '1.5rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      <div
+        onClick={() => setActiveTab?.('campaigns')}
+        style={{ padding: '1.5rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}
+      >
 
         <div style={{
           display: 'flex',
@@ -44,7 +47,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
         }}>
           <span style={{
             fontFamily: 'Cinzel, serif',
-            fontSize: '1.1rem',
+            fontSize: '1.3rem',
             fontWeight: 700,
             color: 'var(--fantasy-gold)',
             letterSpacing: '0.05em',
@@ -53,12 +56,13 @@ export default function Sidebar({ activeTab, setActiveTab }) {
           </span>
           <span style={{
             fontFamily: 'Cinzel, serif',
-            fontSize: '0.85rem',
+            fontStyle: 'oblique',
+            fontSize: '1rem',
             fontWeight: 600,
             color: 'var(--fantasy-accent)',
-            marginLeft: '1.2rem',
+            marginLeft: '2rem',
             letterSpacing: '0.15em',
-            marginTop: '-2px',
+            marginTop: '-3px',
           }}>
             ASSISTANT
           </span>

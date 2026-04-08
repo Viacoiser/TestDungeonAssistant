@@ -23,7 +23,7 @@ export default function Dashboard() {
   const [campaigns, setCampaigns] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [activeTab, setActiveTab] = useState('home')
+  const [activeTab, setActiveTab] = useState('campaigns')
 
   // Modal: Crear campaña
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -156,330 +156,339 @@ export default function Dashboard() {
     <div style={{ minHeight: '100vh', display: 'flex', background: 'var(--fantasy-bg)', fontFamily: 'Inter, sans-serif' }}>
 
       {/* ── Sidebar ── */}
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={(tab) => {
+          setActiveTab(tab)
+          if (selectedCampaign) {
+            setSelectedCampaign(null)
+            setSelectedUserRole('PLAYER')
+          }
+        }}
+      />
 
       {selectedCampaign ? (
-        <CampaignDetail 
-          campaign={selectedCampaign} 
-          userRole={selectedUserRole} 
-          onBack={handleBackFromCampaign} 
+        <CampaignDetail
+          campaign={selectedCampaign}
+          userRole={selectedUserRole}
+          onBack={handleBackFromCampaign}
         />
       ) : (
         <>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
 
-        {/* Background image overlay */}
-        <div style={{ position: 'absolute', inset: 0, zIndex: 0, opacity: 0.08, pointerEvents: 'none' }}>
-          <img
-            src="https://picsum.photos/seed/dungeon-bg/1920/1080?blur=8"
-            alt=""
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            referrerPolicy="no-referrer"
-          />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, var(--fantasy-bg) 0%, transparent 50%, var(--fantasy-bg) 100%)' }} />
-        </div>
-
-        {/* ── Header ── */}
-        <header style={{
-          position: 'sticky', top: 0, zIndex: 20,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '1.1rem 2rem',
-          background: 'rgba(0,0,0,0.4)',
-          backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid rgba(255,255,255,0.05)',
-        }}>
-          {/* Search */}
-          <div style={{ position: 'relative' }}>
-            <Search size={17} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(226,209,166,0.35)', pointerEvents: 'none' }} />
-            <input
-              type="text"
-              placeholder="Buscar campañas..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              style={{
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: 12,
-                padding: '0.6rem 1rem 0.6rem 2.5rem',
-                color: 'var(--fantasy-gold)',
-                fontSize: '0.875rem',
-                outline: 'none',
-                width: 280,
-                transition: 'border-color 0.2s, background 0.2s',
-              }}
-              onFocus={e => {
-                e.target.style.borderColor = 'rgba(217,83,30,0.5)'
-                e.target.style.background = 'rgba(255,255,255,0.08)'
-              }}
-              onBlur={e => {
-                e.target.style.borderColor = 'rgba(255,255,255,0.08)'
-                e.target.style.background = 'rgba(255,255,255,0.05)'
-              }}
-            />
-          </div>
-
-          {/* User info */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingRight: '1rem', borderRight: '1px solid rgba(255,255,255,0.08)' }}>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(226,209,166,0.35)' }}>Jugando como</div>
-                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--fantasy-gold)' }}>{user?.username || user?.email}</div>
-              </div>
-              <div style={{
-                width: 38, height: 38, borderRadius: 10,
-                overflow: 'hidden',
-                border: '2px solid rgba(217,83,30,0.4)',
-                boxShadow: '0 0 12px var(--fantasy-accent-glow)',
-                background: 'rgba(217,83,30,0.2)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <User size={18} color="var(--fantasy-gold)" />
-              </div>
+            {/* Background image overlay */}
+            <div style={{ position: 'absolute', inset: 0, zIndex: 0, opacity: 0.08, pointerEvents: 'none' }}>
+              <img
+                src="https://picsum.photos/seed/dungeon-bg/1920/1080?blur=8"
+                alt=""
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                referrerPolicy="no-referrer"
+              />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, var(--fantasy-bg) 0%, transparent 50%, var(--fantasy-bg) 100%)' }} />
             </div>
-            <button
-              onClick={() => setShowSettingsModal(true)}
-              style={{
-                padding: '0.55rem', background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10,
-                color: 'rgba(226,209,166,0.5)', cursor: 'pointer', transition: 'all 0.2s',
-                display: 'flex', alignItems: 'center',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'var(--fantasy-gold)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(226,209,166,0.5)' }}
-            >
-              <Settings size={19} />
-            </button>
-          </div>
-        </header>
 
-        {/* ── Main ── */}
-        <main style={{ flex: 1, padding: '2.5rem 2rem 3rem', overflowY: 'auto', position: 'relative', zIndex: 10 }}>
-          <div style={{ maxWidth: 960, margin: '0 auto' }}>
+            {/* ── Header ── */}
+            <header style={{
+              position: 'sticky', top: 0, zIndex: 20,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '1.1rem 2rem',
+              background: 'rgba(0,0,0,0.4)',
+              backdropFilter: 'blur(12px)',
+              borderBottom: '1px solid rgba(255,255,255,0.05)',
+            }}>
+              {/* Search */}
+              <div style={{ position: 'relative' }}>
+                <Search size={17} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(226,209,166,0.35)', pointerEvents: 'none' }} />
+                <input
+                  type="text"
+                  placeholder="Buscar campañas..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 12,
+                    padding: '0.6rem 1rem 0.6rem 2.5rem',
+                    color: 'var(--fantasy-gold)',
+                    fontSize: '0.875rem',
+                    outline: 'none',
+                    width: 280,
+                    transition: 'border-color 0.2s, background 0.2s',
+                  }}
+                  onFocus={e => {
+                    e.target.style.borderColor = 'rgba(217,83,30,0.5)'
+                    e.target.style.background = 'rgba(255,255,255,0.08)'
+                  }}
+                  onBlur={e => {
+                    e.target.style.borderColor = 'rgba(255,255,255,0.08)'
+                    e.target.style.background = 'rgba(255,255,255,0.05)'
+                  }}
+                />
+              </div>
 
-            {/* ── Contenido por Tab ── */}
-            {activeTab !== 'home' ? (
-              <SidebarTabContent tab={activeTab} />
-            ) : (
-              <>
-                {/* Section header */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '1.5rem', marginBottom: '2.5rem' }}>
-                  <div style={{ animation: 'fadeInUp 0.4s ease forwards' }}>
-                    <h2 style={{
-                      fontFamily: 'Cinzel, serif',
-                      fontSize: '2.8rem', fontWeight: 900,
-                      color: '#fff', margin: 0, marginBottom: '0.4rem',
-                      textShadow: '0 0 40px rgba(217,83,30,0.25)',
-                    }}>
-                      Mis Campañas
-                    </h2>
-                    <p style={{ color: 'rgba(226,209,166,0.55)', fontSize: '1rem', margin: 0 }}>
-                      Bienvenido, <strong style={{ color: 'var(--fantasy-gold)' }}>{user?.username || 'Aventurero'}</strong>. Tus mundos te esperan.
-                    </p>
+              {/* User info */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingRight: '1rem', borderRight: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(226,209,166,0.35)' }}>Jugando como</div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--fantasy-gold)' }}>{user?.username || user?.email}</div>
                   </div>
-
-                  <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    <button
-                      onClick={() => { setShowJoinModal(true); setJoinCode(''); setJoinError(''); setJoinSuccess('') }}
-                      style={btnStyles.secondary}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
-                    >
-                      <Filter size={15} />
-                      Unirse con Código
-                    </button>
-                    <button
-                      onClick={() => setShowCreateModal(true)}
-                      style={btnStyles.primary}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(217,83,30,0.85)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'var(--fantasy-accent)'}
-                    >
-                      <Plus size={17} />
-                      Nueva Campaña
-                    </button>
+                  <div style={{
+                    width: 38, height: 38, borderRadius: 10,
+                    overflow: 'hidden',
+                    border: '2px solid rgba(217,83,30,0.4)',
+                    boxShadow: '0 0 12px var(--fantasy-accent-glow)',
+                    background: 'rgba(217,83,30,0.2)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <User size={18} color="var(--fantasy-gold)" />
                   </div>
                 </div>
+                <button
+                  onClick={() => setShowSettingsModal(true)}
+                  style={{
+                    padding: '0.55rem', background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10,
+                    color: 'rgba(226,209,166,0.5)', cursor: 'pointer', transition: 'all 0.2s',
+                    display: 'flex', alignItems: 'center',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'var(--fantasy-gold)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(226,209,166,0.5)' }}
+                >
+                  <Settings size={19} />
+                </button>
+              </div>
+            </header>
 
-                {/* Error */}
-                {error && (
-                  <div style={{ background: 'rgba(220,38,38,0.12)', border: '1px solid rgba(220,38,38,0.4)', borderRadius: 12, padding: '0.9rem 1.25rem', marginBottom: '1.5rem' }}>
-                    <p style={{ color: '#fca5a5', margin: 0, fontSize: '0.9rem' }}>{error}</p>
-                  </div>
-                )}
+            {/* ── Main ── */}
+            <main style={{ flex: 1, padding: '2.5rem 2rem 3rem', overflowY: 'auto', position: 'relative', zIndex: 10 }}>
+              <div style={{ maxWidth: 960, margin: '0 auto' }}>
 
-                {/* Loading */}
-                {loading ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '5rem 0' }}>
-                    <div style={{
-                      width: 48, height: 48,
-                      border: '3px solid rgba(217,83,30,0.2)',
-                      borderTop: '3px solid var(--fantasy-accent)',
-                      borderRadius: '50%',
-                      animation: 'spin 0.8s linear infinite',
-                      marginBottom: '1.25rem',
-                    }} />
-                    <p style={{ color: 'rgba(226,209,166,0.45)', fontFamily: 'Cinzel, serif', letterSpacing: '0.1em', fontSize: '0.85rem', textTransform: 'uppercase' }}>
-                      Cargando campañas...
-                    </p>
-                  </div>
-
-                ) : filteredCampaigns.length === 0 && searchQuery ? (
-                  <div style={{ textAlign: 'center', padding: '4rem 0' }}>
-                    <p style={{ color: 'rgba(226,209,166,0.4)', fontFamily: 'Cinzel, serif' }}>No se encontraron campañas para «{searchQuery}»</p>
-                  </div>
-
-                ) : campaigns.length === 0 ? (
-                  /* Empty state */
-                  <div style={{ textAlign: 'center', padding: '5rem 0', animation: 'fadeInUp 0.4s ease forwards' }}>
-                    <div style={{
-                      width: 80, height: 80, borderRadius: '50%',
-                      border: '2px dashed rgba(217,83,30,0.35)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      margin: '0 auto 1.5rem',
-                      color: 'rgba(217,83,30,0.4)',
-                      fontSize: '2rem',
-                    }}>
-                      🏰
-                    </div>
-                    <h3 style={{ color: '#fff', fontFamily: 'Cinzel, serif', fontSize: '1.4rem', marginBottom: 8 }}>
-                      No tienes campañas aún
-                    </h3>
-                    <p style={{ color: 'rgba(226,209,166,0.45)', marginBottom: '2rem' }}>
-                      Crea una o únete a una campaña existente
-                    </p>
-                    <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                      <button onClick={() => setShowJoinModal(true)} style={btnStyles.secondary}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
-                      >
-                        🔗 Unirse con Código
-                      </button>
-                      <button onClick={() => setShowCreateModal(true)} style={btnStyles.primary}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(217,83,30,0.85)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'var(--fantasy-accent)'}
-                      >
-                        ✨ Crear Primera Campaña
-                      </button>
-                    </div>
-                  </div>
-
+                {/* ── Contenido por Tab ── */}
+                {activeTab !== 'campaigns' ? (
+                  <SidebarTabContent tab={activeTab} />
                 ) : (
-                  /* Campaign grid */
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-                    {filteredCampaigns.map((campaign, idx) => (
-                      <CampaignCard
-                        key={campaign.id}
-                        campaign={campaign}
-                        isGM={isGM(campaign)}
-                        index={idx}
-                        loading={enteringCampaign === campaign.id}
-                        onEnter={() => handleEnterCampaign(campaign)}
-                      />
-                    ))}
-
-                    {/* Add new placeholder */}
-                    {!searchQuery && (
-                      <button
-                        onClick={() => setShowCreateModal(true)}
-                        style={{
-                          border: '2px dashed rgba(255,255,255,0.08)',
-                          borderRadius: 20,
-                          padding: '2rem',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '0.75rem',
-                          color: 'rgba(226,209,166,0.2)',
-                          background: 'transparent',
-                          cursor: 'pointer',
-                          minHeight: 220,
-                          transition: 'all 0.2s ease',
-                        }}
-                        onMouseEnter={e => {
-                          e.currentTarget.style.borderColor = 'rgba(217,83,30,0.3)'
-                          e.currentTarget.style.color = 'rgba(217,83,30,0.5)'
-                          e.currentTarget.style.background = 'rgba(217,83,30,0.04)'
-                        }}
-                        onMouseLeave={e => {
-                          e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
-                          e.currentTarget.style.color = 'rgba(226,209,166,0.2)'
-                          e.currentTarget.style.background = 'transparent'
-                        }}
-                      >
-                        <div style={{
-                          width: 52, height: 52,
-                          borderRadius: '50%',
-                          border: '2px dashed currentColor',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  <>
+                    {/* Section header */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '1.5rem', marginBottom: '2.5rem' }}>
+                      <div style={{ animation: 'fadeInUp 0.4s ease forwards' }}>
+                        <h2 style={{
+                          fontFamily: 'Cinzel, serif',
+                          fontSize: '2.8rem', fontWeight: 800,
+                          color: 'var(--fantasy-gold)', margin: 0, marginBottom: '0.4rem',
+                          textShadow: '0 0 40px rgba(217,83,30,0.25)',
                         }}>
-                          <Plus size={26} />
-                        </div>
-                        <span style={{ fontFamily: 'Cinzel, serif', fontSize: '0.85rem', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700 }}>
-                          Crear Nuevo Mundo
-                        </span>
-                      </button>
+                          Mis Campañas
+                        </h2>
+                        <p style={{ color: 'rgba(226,209,166,0.55)', fontSize: '1rem', margin: 0 }}>
+                          Bienvenido, <strong style={{ color: 'var(--fantasy-gold)' }}>{user?.username || 'Aventurero'}</strong>. Tus mundos te esperan.
+                        </p>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '0.75rem' }}>
+                        <button
+                          onClick={() => { setShowJoinModal(true); setJoinCode(''); setJoinError(''); setJoinSuccess('') }}
+                          style={btnStyles.secondary}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+                        >
+                          <Filter size={15} />
+                          Unirse con Código
+                        </button>
+                        <button
+                          onClick={() => setShowCreateModal(true)}
+                          style={btnStyles.primary}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(217,83,30,0.85)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'var(--fantasy-accent)'}
+                        >
+                          <Plus size={17} />
+                          Nueva Campaña
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Error */}
+                    {error && (
+                      <div style={{ background: 'rgba(220,38,38,0.12)', border: '1px solid rgba(220,38,38,0.4)', borderRadius: 12, padding: '0.9rem 1.25rem', marginBottom: '1.5rem' }}>
+                        <p style={{ color: '#fca5a5', margin: 0, fontSize: '0.9rem' }}>{error}</p>
+                      </div>
                     )}
-                  </div>
+
+                    {/* Loading */}
+                    {loading ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '5rem 0' }}>
+                        <div style={{
+                          width: 48, height: 48,
+                          border: '3px solid rgba(217,83,30,0.2)',
+                          borderTop: '3px solid var(--fantasy-accent)',
+                          borderRadius: '50%',
+                          animation: 'spin 0.8s linear infinite',
+                          marginBottom: '1.25rem',
+                        }} />
+                        <p style={{ color: 'rgba(226,209,166,0.45)', fontFamily: 'Cinzel, serif', letterSpacing: '0.1em', fontSize: '0.85rem', textTransform: 'uppercase' }}>
+                          Cargando campañas...
+                        </p>
+                      </div>
+
+                    ) : filteredCampaigns.length === 0 && searchQuery ? (
+                      <div style={{ textAlign: 'center', padding: '4rem 0' }}>
+                        <p style={{ color: 'rgba(226,209,166,0.4)', fontFamily: 'Cinzel, serif' }}>No se encontraron campañas para «{searchQuery}»</p>
+                      </div>
+
+                    ) : campaigns.length === 0 ? (
+                      /* Empty state */
+                      <div style={{ textAlign: 'center', padding: '5rem 0', animation: 'fadeInUp 0.4s ease forwards' }}>
+                        <div style={{
+                          width: 80, height: 80, borderRadius: '50%',
+                          border: '2px dashed rgba(217,83,30,0.35)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          margin: '0 auto 1.5rem',
+                          color: 'rgba(217,83,30,0.4)',
+                          fontSize: '2rem',
+                        }}>
+                          🏰
+                        </div>
+                        <h3 style={{ color: '#fff', fontFamily: 'Cinzel, serif', fontSize: '1.4rem', marginBottom: 8 }}>
+                          No tienes campañas aún
+                        </h3>
+                        <p style={{ color: 'rgba(226,209,166,0.45)', marginBottom: '2rem' }}>
+                          Crea una o únete a una campaña existente
+                        </p>
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                          <button onClick={() => setShowJoinModal(true)} style={btnStyles.secondary}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+                          >
+                            🔗 Unirse con Código
+                          </button>
+                          <button onClick={() => setShowCreateModal(true)} style={btnStyles.primary}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(217,83,30,0.85)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'var(--fantasy-accent)'}
+                          >
+                            ✨ Crear Primera Campaña
+                          </button>
+                        </div>
+                      </div>
+
+                    ) : (
+                      /* Campaign grid */
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                        {filteredCampaigns.map((campaign, idx) => (
+                          <CampaignCard
+                            key={campaign.id}
+                            campaign={campaign}
+                            isGM={isGM(campaign)}
+                            index={idx}
+                            loading={enteringCampaign === campaign.id}
+                            onEnter={() => handleEnterCampaign(campaign)}
+                          />
+                        ))}
+
+                        {/* Add new placeholder */}
+                        {!searchQuery && (
+                          <button
+                            onClick={() => setShowCreateModal(true)}
+                            style={{
+                              border: '2px dashed rgba(255,255,255,0.08)',
+                              borderRadius: 20,
+                              padding: '2rem',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.75rem',
+                              color: 'rgba(226,209,166,0.2)',
+                              background: 'transparent',
+                              cursor: 'pointer',
+                              minHeight: 220,
+                              transition: 'all 0.2s ease',
+                            }}
+                            onMouseEnter={e => {
+                              e.currentTarget.style.borderColor = 'rgba(217,83,30,0.3)'
+                              e.currentTarget.style.color = 'rgba(217,83,30,0.5)'
+                              e.currentTarget.style.background = 'rgba(217,83,30,0.04)'
+                            }}
+                            onMouseLeave={e => {
+                              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
+                              e.currentTarget.style.color = 'rgba(226,209,166,0.2)'
+                              e.currentTarget.style.background = 'transparent'
+                            }}
+                          >
+                            <div style={{
+                              width: 52, height: 52,
+                              borderRadius: '50%',
+                              border: '2px dashed currentColor',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                              <Plus size={26} />
+                            </div>
+                            <span style={{ fontFamily: 'Cinzel, serif', fontSize: '0.85rem', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700 }}>
+                              Crear Nuevo Mundo
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
-              </>
-            )}
-          </div>
-        </main>
-      </div>
-
-      {/* ── Right Panel: Quick Stats ── */}
-      <aside style={{
-        width: 260,
-        background: 'rgba(0,0,0,0.35)',
-        borderLeft: '1px solid rgba(255,255,255,0.06)',
-        height: '100vh',
-        position: 'sticky',
-        top: 0,
-        padding: '2rem 1.5rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '2rem',
-        overflowY: 'auto',
-        flexShrink: 0,
-      }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
-            <BarChart2 size={17} color="var(--fantasy-accent)" />
-            <h3 style={{ fontFamily: 'Cinzel, serif', fontSize: '0.95rem', fontWeight: 700, color: '#fff', margin: 0 }}>
-              Mis Stats
-            </h3>
+              </div>
+            </main>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            <div style={{ gridColumn: 'span 2' }}>
-              <StatCard label="Total Campañas" value={campaigns.length} />
+          {/* ── Right Panel: Quick Stats ── */}
+          <aside style={{
+            width: 260,
+            background: 'rgba(0,0,0,0.35)',
+            borderLeft: '1px solid rgba(255,255,255,0.06)',
+            height: '100vh',
+            position: 'sticky',
+            top: 0,
+            padding: '2rem 1.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '2rem',
+            overflowY: 'auto',
+            flexShrink: 0,
+          }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
+                <BarChart2 size={17} color="var(--fantasy-accent)" />
+                <h3 style={{ fontFamily: 'Cinzel, serif', fontSize: '0.95rem', fontWeight: 700, color: '#fff', margin: 0 }}>
+                  Mis Stats
+                </h3>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <StatCard label="Total Campañas" value={campaigns.length} />
+                </div>
+                <StatCard label="Como GM" value={gmCount} accent />
+                <StatCard label="Como Jugador" value={playerCount} />
+              </div>
             </div>
-            <StatCard label="Como GM" value={gmCount} accent />
-            <StatCard label="Como Jugador" value={playerCount} />
-          </div>
-        </div>
 
-        {/* Divider */}
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
+            {/* Divider */}
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
 
-        {/* Role legend */}
-        <div>
-          <h4 style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(226,209,166,0.35)', marginBottom: '1rem', fontWeight: 600 }}>
-            Leyenda de Roles
-          </h4>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.8rem', color: 'rgba(226,209,166,0.65)' }}>
-              <Crown size={14} color="#d97706" />
-              <span>Dungeon Master</span>
+            {/* Role legend */}
+            <div>
+              <h4 style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(226,209,166,0.35)', marginBottom: '1rem', fontWeight: 600 }}>
+                Leyenda de Roles
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.8rem', color: 'rgba(226,209,166,0.65)' }}>
+                  <Crown size={14} color="#d97706" />
+                  <span>Dungeon Master</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.8rem', color: 'rgba(226,209,166,0.65)' }}>
+                  <Users size={14} color="rgba(226,209,166,0.5)" />
+                  <span>Jugador</span>
+                </div>
+              </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.8rem', color: 'rgba(226,209,166,0.65)' }}>
-              <Users size={14} color="rgba(226,209,166,0.5)" />
-              <span>Jugador</span>
-            </div>
-          </div>
-        </div>
-      </aside>
-      </>
+          </aside>
+        </>
       )}
 
       {/* ── Modal: Crear campaña ── */}
@@ -727,16 +736,16 @@ function CampaignCard({ campaign, isGM, onEnter, index }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }}>
         <div>
           <h3 style={{
-            fontFamily: 'Cinzel, serif',
-            fontSize: '1.1rem', fontWeight: 700,
+            fontFamily: 'Almendra, serif',
+            fontSize: '1.25rem', fontWeight: 700,
             color: hovered ? 'var(--fantasy-gold)' : '#fff',
             margin: 0, marginBottom: '0.3rem',
             transition: 'color 0.2s',
           }}>
             {campaign.name}
           </h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.7rem', fontWeight: 600, color: isGM ? 'rgba(217,119,6,0.8)' : 'rgba(226,209,166,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-            {isGM ? <Crown size={12} /> : <Users size={12} />}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.7rem', fontWeight: 500, color: isGM ? 'rgba(217,119,6,0.8)' : 'rgba(226,209,166,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            {isGM ? <Crown size={14} /> : <Users size={14} />}
             <span>{isGM ? 'Dungeon Master' : 'Jugador'}</span>
           </div>
         </div>
@@ -753,15 +762,16 @@ function CampaignCard({ campaign, isGM, onEnter, index }) {
 
       {/* Description */}
       <p style={{
-        color: 'rgba(226,209,166,0.55)',
-        fontSize: '0.875rem',
+        fontFamily: 'Almendra, serif',
+        color: 'rgba(226,209,166,0.65)',
+        fontSize: '1rem',
         margin: 0,
-        lineHeight: 1.55,
+        lineHeight: 1.5,
         display: '-webkit-box',
         WebkitLineClamp: 2,
         WebkitBoxOrient: 'vertical',
         overflow: 'hidden',
-        minHeight: 42,
+        minHeight: 48,
       }}>
         {campaign.description || 'Sin descripción'}
       </p>

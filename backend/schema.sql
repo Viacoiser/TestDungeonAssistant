@@ -22,10 +22,14 @@ CREATE TABLE IF NOT EXISTS campaigns (
     name TEXT NOT NULL,
     description TEXT,
     lore_summary TEXT,
+    invite_code TEXT UNIQUE,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- Si la tabla ya existe, agregar la columna con el siguiente comando:
+-- ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS invite_code TEXT UNIQUE;
 
 -- ============================================================================
 -- TABLA: campaign_members
@@ -189,6 +193,7 @@ CREATE TABLE IF NOT EXISTS role_change_requests (
 -- ============================================================================
 CREATE INDEX IF NOT EXISTS idx_campaign_members_user_id ON campaign_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_campaign_members_campaign_id ON campaign_members(campaign_id);
+CREATE INDEX IF NOT EXISTS idx_campaigns_invite_code ON campaigns(invite_code);
 CREATE INDEX IF NOT EXISTS idx_characters_player_id ON characters(player_id);
 CREATE INDEX IF NOT EXISTS idx_characters_campaign_id ON characters(campaign_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_campaign_id ON sessions(campaign_id);
@@ -213,9 +218,9 @@ ALTER TABLE role_change_requests ENABLE ROW LEVEL SECURITY;
 -- ============================================================================
 -- RLS: users - Solo el usuario puede ver/insertar su propio perfil
 -- ============================================================================
-CREATE POLICY "Users can view own profile"
+CREATE POLICY "Authenticated users can view any profile"
 ON users FOR SELECT
-USING (auth.uid() = id);
+USING (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Users can insert own profile"
 ON users FOR INSERT

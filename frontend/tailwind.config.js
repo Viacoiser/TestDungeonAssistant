@@ -14,6 +14,8 @@ export default {
         darkbg: '#0F1E2E',
         muted: '#6B7280',
         success: '#2D6A4F',
+        'fantasy-gold': 'var(--fantasy-gold)',
+        'fantasy-accent': 'var(--fantasy-accent)',
       },
       fontFamily: {
         serif: ['Georgia', 'serif'],
