@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, BookOpen, Send, Trash2, Edit2, History, Users, Settings, MessageSquare, Theater, Camera, Mic, Upload, Image, StopCircle, Play } from 'lucide-react'
 import { campaignAPI, sessionAPI, npcAPI, assistantAPI } from '../services/api'
 import { useAuthStore } from '../store/useAuthStore'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 // ============================================================================
 // Iconos inline SVG para evitar dependencias extra
@@ -297,7 +298,7 @@ export function NotesTab({ campaignId }) {
           {/* Panel de Contenido / Notas */}
           <div className="flex-1 flex flex-col min-h-0 relative">
             {!activeSession ? (
-              <div className="flex-1 flex items-center justify-center text-fantasy-gold/20 flex-col gap-4">
+              <div className="absolute inset-0 flex items-center justify-center text-fantasy-gold/20 flex-col gap-4">
                 <BookOpen size={48} />
                 <p className="text-sm">Selecciona una sesión para ver sus notas</p>
               </div>
@@ -1326,7 +1327,7 @@ export function MembersTab({ campaignId }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-3 border-purple-500 border-t-transparent rounded-full animate-spin" />
+        <LoadingSpinner size={52} />
       </div>
     )
   }
@@ -1419,7 +1420,7 @@ export default function CampaignView() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
-        <div className="w-10 h-10 border-4 border-purple-500 border-t-purple-300 rounded-full animate-spin" />
+        <LoadingSpinner size={72} text="Cargando campaña..." />
       </div>
     )
   }

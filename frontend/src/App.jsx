@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useAuthStore } from './store/useAuthStore'
 import { initSocket } from './services/socket'
 import { getAuthAPI } from './services/api'
+import LoadingSpinner from './components/LoadingSpinner'
 
 function App() {
   const { setUser, setToken, token } = useAuthStore()
@@ -50,14 +51,7 @@ function App() {
 
   // Mostrar pantalla de carga mientras se restaura la sesión y valida el token
   if (isHydrating) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-purple-900 via-gray-900 to-black">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-purple-500 border-t-purple-300 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white text-lg">Cargando DungeonAssistant...</p>
-        </div>
-      </div>
-    )
+    return <LoadingSpinner fullPage text="Cargando DungeonAssistant..." size={72} />
   }
 
   return <RouterProvider router={router} />

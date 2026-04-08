@@ -31,7 +31,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
       height: '100vh',
       position: 'sticky',
       top: 0,
-      zIndex: 30,
+      zIndex: 0,
       flexShrink: 0,
     }}>
       {/* Logo */}
@@ -46,23 +46,23 @@ export default function Sidebar({ activeTab, setActiveTab }) {
           lineHeight: 1.1,
         }}>
           <span style={{
-            fontFamily: 'Cinzel, serif',
+            fontFamily: 'Almendra, serif',
             fontSize: '1.3rem',
-            fontWeight: 700,
+            fontWeight: 900,
             color: 'var(--fantasy-gold)',
-            letterSpacing: '0.05em',
+            letterSpacing: '0.2em',
           }}>
             DUNGEON
           </span>
           <span style={{
-            fontFamily: 'Cinzel, serif',
-            fontStyle: 'oblique',
-            fontSize: '1rem',
+            fontFamily: 'Almendra, serif',
+            fontStyle: 'italic',
+            fontSize: '1.1rem',
             fontWeight: 600,
             color: 'var(--fantasy-accent)',
-            marginLeft: '2rem',
-            letterSpacing: '0.15em',
-            marginTop: '-3px',
+            marginLeft: '2.2rem',
+            letterSpacing: '0.4em',
+            marginTop: '-5px',
           }}>
             ASSISTANT
           </span>
@@ -78,19 +78,20 @@ export default function Sidebar({ activeTab, setActiveTab }) {
               key={item.id}
               onClick={() => setActiveTab?.(item.id)}
               style={{
+                fontFamily: 'Almendra, serif',
+                fontStyle: 'normal',
+                fontWeight: 600,
                 display: 'flex',
+                fontSize: '1rem',
                 alignItems: 'center',
-                gap: '1rem',
+                gap: '1.3rem',
                 padding: '0.75rem 1rem',
                 borderRadius: 12,
-                border: 'none',
                 cursor: 'pointer',
                 background: isActive ? 'rgba(217,83,30,0.12)' : 'transparent',
                 color: isActive ? 'var(--fantasy-accent)' : 'rgba(226,209,166,0.55)',
-                fontWeight: 500,
-                fontSize: '0.9rem',
-                letterSpacing: '0.01em',
-                transition: 'all 0.18s ease',
+                letterSpacing: '0.05em',
+                transition: 'all 0.3s ease',
                 textAlign: 'left',
                 position: 'relative',
               }}
@@ -126,7 +127,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
       </div>
 
       {/* Logout */}
-      <div style={{ padding: '1rem 0.75rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ padding: '1rem 0.75rem', fontFamily: 'Almendra, serif', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <SidebarLogoutButton />
       </div>
     </aside>

@@ -5,6 +5,7 @@ import { useAuthStore } from '../store/useAuthStore'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mail, Lock, ArrowRight, FlameKindling, User, KeyRound } from 'lucide-react'
 import bgDungeon from '../assets/bg_dungeon.png'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -268,7 +269,7 @@ export default function Login() {
             className="w-full bg-orange-600 text-white font-display tracking-widest py-4 rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-orange-900/20 disabled:opacity-50 disabled:cursor-not-allowed group transition-all"
           >
             {loading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <LoadingSpinner size={24} padding="0" />
             ) : (
               <>
                 {isRegister ? 'CREATE ACCOUNT' : 'PROCEED'}{' '}

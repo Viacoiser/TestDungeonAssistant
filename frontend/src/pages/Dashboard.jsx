@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/useAuthStore'
 import { campaignAPI } from '../services/api'
 import Sidebar from '../components/desktop/Sidebar'
 import CampaignDetail from '../components/desktop/CampaignDetail'
+import LoadingSpinner from '../components/LoadingSpinner'
 import {
   Search,
   Settings,
@@ -274,8 +275,9 @@ export default function Dashboard() {
                     <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '1.5rem', marginBottom: '2.5rem' }}>
                       <div style={{ animation: 'fadeInUp 0.4s ease forwards' }}>
                         <h2 style={{
-                          fontFamily: 'Cinzel, serif',
-                          fontSize: '2.8rem', fontWeight: 800,
+                          fontFamily: 'Almendra, serif',
+                          fontStyle: 'normal',
+                          fontSize: '3.5rem', fontWeight: 700,
                           color: 'var(--fantasy-gold)', margin: 0, marginBottom: '0.4rem',
                           textShadow: '0 0 40px rgba(217,83,30,0.25)',
                         }}>
@@ -299,8 +301,14 @@ export default function Dashboard() {
                         <button
                           onClick={() => setShowCreateModal(true)}
                           style={btnStyles.primary}
-                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(217,83,30,0.85)'}
-                          onMouseLeave={e => e.currentTarget.style.background = 'var(--fantasy-accent)'}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.background = 'rgba(226, 209, 166, 0.15)'
+                            e.currentTarget.style.boxShadow = '0 0 25px var(--fantasy-accent-glow)'
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.background = 'rgba(226, 209, 166, 0.08)'
+                            e.currentTarget.style.boxShadow = '0 0 15px var(--fantasy-accent-glow)'
+                          }}
                         >
                           <Plus size={17} />
                           Nueva Campaña
@@ -317,19 +325,7 @@ export default function Dashboard() {
 
                     {/* Loading */}
                     {loading ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '5rem 0' }}>
-                        <div style={{
-                          width: 48, height: 48,
-                          border: '3px solid rgba(217,83,30,0.2)',
-                          borderTop: '3px solid var(--fantasy-accent)',
-                          borderRadius: '50%',
-                          animation: 'spin 0.8s linear infinite',
-                          marginBottom: '1.25rem',
-                        }} />
-                        <p style={{ color: 'rgba(226,209,166,0.45)', fontFamily: 'Cinzel, serif', letterSpacing: '0.1em', fontSize: '0.85rem', textTransform: 'uppercase' }}>
-                          Cargando campañas...
-                        </p>
-                      </div>
+                      <LoadingSpinner text="Cargando campañas..." />
 
                     ) : filteredCampaigns.length === 0 && searchQuery ? (
                       <div style={{ textAlign: 'center', padding: '4rem 0' }}>
@@ -363,8 +359,14 @@ export default function Dashboard() {
                             🔗 Unirse con Código
                           </button>
                           <button onClick={() => setShowCreateModal(true)} style={btnStyles.primary}
-                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(217,83,30,0.85)'}
-                            onMouseLeave={e => e.currentTarget.style.background = 'var(--fantasy-accent)'}
+                            onMouseEnter={e => {
+                              e.currentTarget.style.background = 'rgba(226, 209, 166, 0.15)'
+                              e.currentTarget.style.boxShadow = '0 0 25px var(--fantasy-gold)'
+                            }}
+                            onMouseLeave={e => {
+                              e.currentTarget.style.background = 'rgba(226, 209, 166, 0.08)'
+                              e.currentTarget.style.boxShadow = '0 0 15px var(--fantasy-gold)'
+                            }}
                           >
                             ✨ Crear Primera Campaña
                           </button>
@@ -454,7 +456,7 @@ export default function Dashboard() {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
                 <BarChart2 size={17} color="var(--fantasy-accent)" />
-                <h3 style={{ fontFamily: 'Cinzel, serif', fontSize: '0.95rem', fontWeight: 700, color: '#fff', margin: 0 }}>
+                <h3 style={{ fontFamily: 'Almendra, serif', fontStyle: 'normal', fontSize: '1rem', color: "var(--fantasy-gold)", fontWeight: 600, margin: 0 }}>
                   Mis Stats
                 </h3>
               </div>
@@ -521,8 +523,14 @@ export default function Dashboard() {
                 Cancelar
               </button>
               <button type="submit" style={btnStyles.primary} disabled={creating}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(217,83,30,0.85)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'var(--fantasy-accent)'}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'rgba(226, 209, 166, 0.15)'
+                  e.currentTarget.style.boxShadow = '0 0 25px var(--fantasy-gold)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'rgba(226, 209, 166, 0.08)'
+                  e.currentTarget.style.boxShadow = '0 0 15px var(--fantasy-gold)'
+                }}
               >
                 {creating ? 'Creando...' : '✨ Crear Campaña'}
               </button>
@@ -691,7 +699,7 @@ function DiceRoller() {
 }
 
 /* ── Campaign Card ── */
-function CampaignCard({ campaign, isGM, onEnter, index }) {
+function CampaignCard({ campaign, isGM, onEnter, index, loading }) {
   const [hovered, setHovered] = useState(false)
 
   return (
@@ -796,27 +804,47 @@ function CampaignCard({ campaign, isGM, onEnter, index }) {
       {/* CTA */}
       <button
         onClick={onEnter}
+        disabled={loading}
         style={{
+          fontFamily: 'Almendra, serif',
           width: '100%',
-          background: isGM
-            ? 'linear-gradient(135deg, #78350f, #d97706)'
-            : 'linear-gradient(135deg, rgba(217,83,30,0.8), var(--fantasy-accent))',
-          color: '#fff',
-          border: 'none',
+          background: loading
+            ? 'rgba(255,255,255,0.05)'
+            : isGM
+              ? 'linear-gradient(135deg, #664c1cff, #c9873cff), var(--fantasy-gold)'
+              : 'linear-gradient(135deg, rgba(182, 78, 37, 0.8), var(--fantasy-accent))',
+          color: loading ? 'rgba(226,209,166,0.4)' : '#fff',
+          border: loading ? '1px solid rgba(255,255,255,0.08)' : 'none',
           borderRadius: 12,
           padding: '0.7rem',
-          fontWeight: 700,
-          cursor: 'pointer',
+          fontWeight: 800,
+          cursor: loading ? 'not-allowed' : 'pointer',
           fontSize: '0.85rem',
           letterSpacing: '0.06em',
           textTransform: 'uppercase',
-          transition: 'opacity 0.2s',
-          boxShadow: isGM ? '0 4px 16px rgba(217,119,6,0.25)' : '0 4px 16px var(--fantasy-accent-glow)',
+          transition: 'all 0.25s',
+          boxShadow: loading ? 'none' : isGM ? '0 4px 16px rgba(217,119,6,0.25)' : '0 5px 16px var(--fantasy-accent-glow)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem',
         }}
-        onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
-        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+        onMouseEnter={e => { if (!loading) e.currentTarget.style.opacity = '0.85' }}
+        onMouseLeave={e => { if (!loading) e.currentTarget.style.opacity = '1' }}
       >
-        {isGM ? 'Gestionar Campaña' : 'Entrar a Campaña'}
+        {loading ? (
+          <>
+            <svg
+              width={18} height={18}
+              viewBox="0 0 100 100"
+              style={{ animation: 'spin 1.4s linear infinite', flexShrink: 0 }}
+              fill="none"
+            >
+              <path d="M 50 8 A 42 42 0 1 1 18 68" stroke="var(--fantasy-gold)" strokeWidth="10" strokeLinecap="round" opacity="0.7" />
+              <circle cx="50" cy="50" r="9" fill="var(--fantasy-gold)" opacity="0.7" />
+            </svg>
+            Entrando...
+          </>
+        ) : (
+          isGM ? 'Gestionar Campaña' : 'Entrar a Campaña'
+        )}
       </button>
     </div>
   )
@@ -902,23 +930,27 @@ function Modal({ onClose, title, children }) {
 /* ── Shared styles ── */
 const btnStyles = {
   primary: {
-    background: 'var(--fantasy-accent)',
-    color: '#fff', border: 'none', borderRadius: 12,
+    fontFamily: 'Almendra, serif',
+    background: 'rgba(226, 209, 166, 0.08)',
+    color: 'var(--fantasy-gold)',
+    border: '1px solid var(--fantasy-gold)',
+    borderRadius: 12,
     padding: '0.65rem 1.25rem',
-    fontWeight: 700, cursor: 'pointer', fontSize: '0.875rem',
+    fontWeight: 700, cursor: 'pointer', fontSize: '1rem',
     display: 'flex', alignItems: 'center', gap: '0.5rem',
-    transition: 'background 0.2s',
+    transition: 'all 0.2s',
     boxShadow: '0 0 15px var(--fantasy-accent-glow)',
     letterSpacing: '0.04em',
     textTransform: 'uppercase',
   },
   secondary: {
+    fontFamily: 'Almendra, serif',
     background: 'rgba(255,255,255,0.04)',
     color: 'var(--fantasy-gold)',
     border: '1px solid rgba(255,255,255,0.1)',
     borderRadius: 12,
     padding: '0.65rem 1.25rem',
-    fontWeight: 700, cursor: 'pointer', fontSize: '0.875rem',
+    fontWeight: 700, cursor: 'pointer', fontSize: '1rem',
     display: 'flex', alignItems: 'center', gap: '0.5rem',
     transition: 'background 0.2s',
     letterSpacing: '0.04em',
