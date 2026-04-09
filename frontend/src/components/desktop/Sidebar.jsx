@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { icon: ScrollText, label: 'Rasgos', id: 'traits' },
   { icon: Backpack, label: 'Equipamento', id: 'equipment' },
   { icon: Dices, label: 'Dados', id: 'dice' },
+  { icon: Dices, label: 'Dice Box', id: 'dicebox' },
   { icon: Settings, label: 'Ajustes', id: 'settings' },
 ]
 
@@ -34,12 +35,12 @@ export default function Sidebar({ activeTab, setActiveTab }) {
       zIndex: 0,
       flexShrink: 0,
     }}>
+
       {/* Logo */}
       <div
         onClick={() => setActiveTab?.('campaigns')}
         style={{ padding: '1.5rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}
       >
-
         <div style={{
           display: 'flex',
           flexDirection: 'column',

@@ -5,6 +5,7 @@ import { campaignAPI } from '../services/api'
 import Sidebar from '../components/desktop/Sidebar'
 import CampaignDetail from '../components/desktop/CampaignDetail'
 import LoadingSpinner from '../components/LoadingSpinner'
+import DiceBoxRoller from '../components/desktop/DiceBoxRoller'
 import {
   Search,
   Settings,
@@ -619,11 +620,13 @@ function SidebarTabContent({ tab }) {
     traits: { label: 'Rasgos', icon: '📜' },
     equipment: { label: 'Equipamiento', icon: '🎒' },
     dice: { label: 'Dados', icon: '🎲' },
+    dicebox: { label: 'Dado 3D', icon: '🎲' },
     settings: { label: 'Ajustes', icon: '⚙️' },
   }
   const info = tabLabels[tab] || { label: tab, icon: '⭐' }
 
   if (tab === 'dice') return <DiceRoller />
+  if (tab === 'dicebox') return <DiceBoxRoller />
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '6rem 2rem', textAlign: 'center' }}>
