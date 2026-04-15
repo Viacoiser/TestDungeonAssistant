@@ -116,4 +116,20 @@ export const visionAPI = {
     api.post('/vision/digitize', { campaign_id: campaignId, image_url: imageUrl }),
 }
 
+// D&D5e Search
+export const dnd5eAPI = {
+  search: (query, categories = null, limit = 10) => {
+    const params = { q: query, limit }
+    if (categories) params.categories = categories.join(',')
+    return api.get('/api/dnd5e/search', { params })
+  },
+  autocomplete: (query, categories = null, limit = 5) => {
+    const params = { q: query, limit }
+    if (categories) params.categories = categories.join(',')
+    return api.get('/api/dnd5e/autocomplete', { params })
+  },
+  analyzeNote: (content) =>
+    api.post('/api/dnd5e/analyze-note', { content }),
+}
+
 export default api

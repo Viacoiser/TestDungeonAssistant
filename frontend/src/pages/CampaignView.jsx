@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, BookOpen, Send, Trash2, Edit2, History, Users, Settings, MessageSquare, Theater, Camera, Mic, Upload, Image, StopCircle, Play } from 'lucide-react'
-import { campaignAPI, sessionAPI, npcAPI, assistantAPI, characterAPI } from '../services/api'
+import { campaignAPI, sessionAPI, npcAPI, assistantAPI, characterAPI, dnd5eAPI } from '../services/api'
 import { useAuthStore } from '../store/useAuthStore'
 import LoadingSpinner from '../components/LoadingSpinner'
 import LevelUpModal from '../components/LevelUpModal'
@@ -100,6 +100,11 @@ export function NotesTab({ campaignId }) {
   
   // Estado para cambiar privacidad de nota
   const [togglingNoteId, setTogglingNoteId] = useState(null)
+
+  // Estados para autocompletado D&D5e
+  const [autocomplete, setAutocomplete] = useState([])
+  const [showAutocomplete, setShowAutocomplete] = useState(false)
+  const textareaRef = useRef(null)
 
   useEffect(() => {
     loadSessions()
@@ -223,6 +228,31 @@ export function NotesTab({ campaignId }) {
     } finally {
       setTogglingNoteId(null)
     }
+  }
+
+  const handleNoteTextChange = async (e) => {
+    const text = e.target.value
+    setNoteText(text)
+    
+    // Buscar autocompletado si el texto es lo suficientemente largo
+    if (text.length >= 2) {
+      try {
+        const res = await dnd5eAPI.autocomplete(text, ['items', 'spells', 'classes', 'races'], 5)
+        setAutocomplete(res.data?.suggestions || [])
+        setShowAutocomplete(res.data?.suggestions?.length > 0)
+      } catch (e) {
+        console.error('Error en autocompletado:', e)
+        setShowAutocomplete(false)
+      }
+    } else {
+      setShowAutocomplete(false)
+    }
+  }
+
+  const handleSelectSuggestion = (suggestion) => {
+    setNoteText(noteText + suggestion.label + ' ')
+    setShowAutocomplete(false)
+    textareaRef.current?.focus()
   }
 
   // Abrir modal de confirmación
@@ -467,17 +497,36 @@ export function NotesTab({ campaignId }) {
 
                 {/* Input de nota */}
                 <div className="mt-auto">
-                  <div className="flex gap-2 bg-white/5 p-2 rounded-2xl border border-white/5 focus-within:border-fantasy-accent/30 transition-colors">
-                    <textarea
-                      value={noteText}
-                      onChange={e => setNoteText(e.target.value)}
-                      placeholder="Escribe la nota de sesión..."
-                      rows={2}
-                      className="flex-1 bg-transparent border-none rounded-xl px-4 py-2 text-[var(--fantasy-gold)] text-sm placeholder-[var(--fantasy-gold-muted)]/50 focus:outline-none resize-none"
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && e.ctrlKey) handleAddNote()
-                      }}
-                    />
+                  <div className="flex gap-2 bg-white/5 p-2 rounded-2xl border border-white/5 focus-within:border-fantasy-accent/30 transition-colors relative">
+                    <div className="flex-1 relative">
+                      <textarea
+                        ref={textareaRef}
+                        value={noteText}
+                        onChange={handleNoteTextChange}
+                        placeholder="Escribe la nota de sesión..."
+                        rows={2}
+                        className="w-full bg-transparent border-none rounded-xl px-4 py-2 text-[var(--fantasy-gold)] text-sm placeholder-[var(--fantasy-gold-muted)]/50 focus:outline-none resize-none"
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && e.ctrlKey) handleAddNote()
+                        }}
+                      />
+                      
+                      {/* Dropdown de autocompletado */}
+                      {showAutocomplete && autocomplete.length > 0 && (
+                        <div className="absolute top-full left-4 right-4 mt-1 z-50 bg-gray-900 border border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                          {autocomplete.map((suggestion, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => handleSelectSuggestion(suggestion)}
+                              className="w-full text-left px-4 py-2 text-[var(--fantasy-gold)] text-sm hover:bg-fantasy-accent/20 hover:text-fantasy-accent transition flex items-center justify-between"
+                            >
+                              <span>{suggestion.label}</span>
+                              <span className="text-[10px] text-[var(--fantasy-gold-muted)]">{suggestion.category}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <button
                       onClick={handleAddNote}
                       disabled={sending || !noteText.trim()}
