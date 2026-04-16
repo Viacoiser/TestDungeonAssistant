@@ -171,30 +171,71 @@ class DND5ESearcher:
         """
         Analizar nota buscando items, hechizos, etc.
         Retorna items y hechizos detectados sin usar Gemini.
+        
+        Phase 1 Optimized: Búsqueda rápida con:
+        - Caché de búsquedas (no repetir mismo término)
+        - Solo palabras grandes (>4 caracteres) para accuracy
+        - Threshold alto (75%+ para items, 80%+ para spells)
+        - Búsqueda prioritaria de frases sobre palabras individuales
         """
         self._ensure_loaded()
-        logger.info("Analyzing note for D&D5e entities...")
+        logger.info("Analyzing note for D&D5e entities (optimized)...")
 
-        words = note_content.lower().split()
+        note_lower = note_content.lower()
+        words = note_lower.split()
         detected_items = []
         detected_spells = []
-
-        # Buscar cada palabra en items y spells
-        for word in set(words):
-            if len(word) < 3:  # Ignorar palabras muy cortas
-                continue
-
-            # Buscar en items
-            item_results = self.search(word, categories=["items"], limit=1)
-            if item_results and item_results[0]["score"] >= 70:
+        
+        # Cache de términos ya buscados para no repetir
+        searched_terms = set()
+        
+        # Strategy 1: Buscar frases de 2-3 palabras PRIMERO (mejor precisión)
+        phrases = []
+        for i in range(len(words) - 1):
+            phrase2 = f"{words[i]} {words[i+1]}".strip('.,!?;:\'"')
+            if len(phrase2) >= 8 and phrase2 not in searched_terms:  # Min 8 chars para frase
+                phrases.append(phrase2)
+                searched_terms.add(phrase2)
+            
+            if i < len(words) - 2:
+                phrase3 = f"{words[i]} {words[i+1]} {words[i+2]}".strip('.,!?;:\'"')
+                if len(phrase3) >= 12 and phrase3 not in searched_terms:  # Min 12 chars
+                    phrases.append(phrase3)
+                    searched_terms.add(phrase3)
+        
+        # Buscar frases en items (más específicas)
+        for phrase in phrases[:5]:  # Limitar a 5 frases para no ser muy lento
+            item_results = self.search(phrase, categories=["items"], limit=1)
+            if item_results and item_results[0]["score"] >= 75:  # Alto threshold
                 detected_items.append({
                     "name": item_results[0]["name"],
-                    "confidence": item_results[0]["score"]
+                    "confidence": item_results[0]["score"],
+                    "quantity": 1
                 })
 
-            # Buscar en hechizos
-            spell_results = self.search(word, categories=["spells"], limit=1)
-            if spell_results and spell_results[0]["score"] >= 70:
+        # Strategy 2: Buscar palabras individuales (solo palabras largas)
+        for word in set(words):
+            if len(word) < 5:  # Solo palabras >= 5 caracteres (antes era 3)
+                continue
+            
+            clean_word = word.strip('.,!?;:\'"')
+            if len(clean_word) < 5 or clean_word in searched_terms:
+                continue
+            
+            searched_terms.add(clean_word)
+
+            # Buscar en items
+            item_results = self.search(clean_word, categories=["items"], limit=1)
+            if item_results and item_results[0]["score"] >= 78:  # Threshold más alto
+                detected_items.append({
+                    "name": item_results[0]["name"],
+                    "confidence": item_results[0]["score"],
+                    "quantity": 1
+                })
+
+            # Buscar en spells (threshold aún más alto)
+            spell_results = self.search(clean_word, categories=["spells"], limit=1)
+            if spell_results and spell_results[0]["score"] >= 80:
                 detected_spells.append({
                     "name": spell_results[0]["name"],
                     "confidence": spell_results[0]["score"]
@@ -203,12 +244,38 @@ class DND5ESearcher:
         # Remover duplicados manteniendo el de mayor score
         detected_items = self._deduplicate(detected_items)
         detected_spells = self._deduplicate(detected_spells)
+        detected_npcs = self._detect_npcs(note_content)
 
-        logger.info(f"Detected {len(detected_items)} items and {len(detected_spells)} spells")
+        logger.info(
+            f"Detected {len(detected_items)} items, {len(detected_spells)} spells, "
+            f"{len(detected_npcs)} NPCs (Phase 1 optimized)"
+        )
         return {
             "detected_items": detected_items,
-            "detected_spells": detected_spells
+            "detected_spells": detected_spells,
+            "detected_npcs": detected_npcs
         }
+
+    def _detect_npcs(self, note_content: str) -> list:
+        """
+        Detectar NPCs por patrón: palabras capitalizadas que no son conocidas.
+        Esto es un heurístico simple. Gemini hará análisis más profundo.
+        """
+        import re
+        
+        # Patrón: palabras capitalizadas (posibles nombres de NPCs)
+        capitalized = re.findall(r'\b([A-Z][a-z]+(?:\s[A-Z][a-z]+)*)\b', note_content)
+        
+        detected = []
+        for name in set(capitalized):
+            if len(name) >= 3 and name not in ['The', 'And', 'In', 'To', 'At', 'For']:
+                detected.append({
+                    "name": name,
+                    "confidence": 60,  # Baja confianza, solo heurístico
+                    "source": "local"
+                })
+        
+        return detected[:5]  # Máximo 5 NPCs detectados localmente
 
     def _deduplicate(self, items: list) -> list:
         """Remover duplicados por nombre, manteniendo el de mayor score"""
