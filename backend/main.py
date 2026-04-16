@@ -18,7 +18,7 @@ import socketio
 load_dotenv(Path(__file__).parent / '.env')
 
 # Import routers AFTER loading environment
-from routers import auth, campaigns, player, sessions, vision, gamemaster, realtime, assistant, dnd5e_search
+from routers import auth, campaigns, player, sessions, vision, gamemaster, realtime, assistant, dnd5e_search, rag
 
 # Configure logging
 logging.basicConfig(
@@ -102,6 +102,7 @@ app.include_router(gamemaster.router)
 app.include_router(realtime.router)
 app.include_router(assistant.router)
 app.include_router(dnd5e_search.router)
+app.include_router(rag.router)
 
 # Socket.io events (básico por ahora)
 @sio.event

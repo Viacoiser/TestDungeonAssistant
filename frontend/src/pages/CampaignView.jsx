@@ -104,6 +104,7 @@ export function NotesTab({ campaignId }) {
   // Estados para autocompletado D&D5e
   const [autocomplete, setAutocomplete] = useState([])
   const [showAutocomplete, setShowAutocomplete] = useState(false)
+  const [autocompletePosition, setAutocompletePosition] = useState('bottom') // 'top' o 'bottom'
   const textareaRef = useRef(null)
 
   useEffect(() => {
@@ -234,11 +235,30 @@ export function NotesTab({ campaignId }) {
     const text = e.target.value
     setNoteText(text)
     
-    // Buscar autocompletado si el texto es lo suficientemente largo
-    if (text.length >= 2) {
+    // Extraer la última palabra (desde el último espacio hasta el final)
+    const words = text.split(/\s+/)
+    const lastWord = words[words.length - 1]
+    
+    // Buscar autocompletado si la última palabra tiene al menos 2 caracteres
+    if (lastWord.length >= 2) {
       try {
-        const res = await dnd5eAPI.autocomplete(text, ['items', 'spells', 'classes', 'races'], 5)
+        const res = await dnd5eAPI.autocomplete(lastWord, ['items', 'spells', 'classes', 'races'], 5)
         setAutocomplete(res.data?.suggestions || [])
+        
+        // Detectar espacio disponible
+        if (textareaRef.current && res.data?.suggestions?.length > 0) {
+          const rect = textareaRef.current.getBoundingClientRect()
+          const spaceBelow = window.innerHeight - rect.bottom
+          const spaceAbove = rect.top
+          
+          // Si no hay 200px de espacio abajo, mostrar arriba
+          if (spaceBelow < 200 && spaceAbove > 200) {
+            setAutocompletePosition('top')
+          } else {
+            setAutocompletePosition('bottom')
+          }
+        }
+        
         setShowAutocomplete(res.data?.suggestions?.length > 0)
       } catch (e) {
         console.error('Error en autocompletado:', e)
@@ -250,7 +270,15 @@ export function NotesTab({ campaignId }) {
   }
 
   const handleSelectSuggestion = (suggestion) => {
-    setNoteText(noteText + suggestion.label + ' ')
+    // Obtener la última palabra que estábamos escribiendo
+    const words = noteText.split(/(\s+)/)
+    const lastWord = words[words.length - 1]
+    
+    // Reemplazar la última palabra con la sugerencia
+    const textBeforeLastWord = noteText.substring(0, noteText.length - lastWord.length)
+    const newText = textBeforeLastWord + suggestion.label + ' '
+    
+    setNoteText(newText)
     setShowAutocomplete(false)
     textareaRef.current?.focus()
   }
@@ -511,9 +539,13 @@ export function NotesTab({ campaignId }) {
                         }}
                       />
                       
-                      {/* Dropdown de autocompletado */}
+                      {/* Dropdown de autocompletado - Flexible position */}
                       {showAutocomplete && autocomplete.length > 0 && (
-                        <div className="absolute top-full left-4 right-4 mt-1 z-50 bg-gray-900 border border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        <div className={`absolute left-4 right-4 z-50 bg-gray-900 border border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto ${
+                          autocompletePosition === 'top' 
+                            ? 'bottom-full mb-1' 
+                            : 'top-full mt-1'
+                        }`}>
                           {autocomplete.map((suggestion, idx) => (
                             <button
                               key={idx}
@@ -1052,10 +1084,16 @@ export function AssistantTab({ campaignId }) {
 
     try {
       const res = await assistantAPI.chat(campaignId, question)
-      const { answer } = res.data
+      // Asegurar que obtenemos el string answer correctamente
+      const answer = res.data?.answer || res.data || ''
+      
+      if (typeof answer !== 'string') {
+        throw new Error('Respuesta inválida del asistente')
+      }
 
       setMessages(prev => [...prev, { role: 'assistant', text: answer }])
     } catch (e) {
+      console.error('Error en chat:', e)
       setMessages(prev => [...prev, {
         role: 'assistant',
         text: 'Hubo un error al consultar el asistente. Verifica que el backend esté corriendo.',
@@ -1126,7 +1164,7 @@ export function AssistantTab({ campaignId }) {
 // ============================================================================
 // Tab: Configuración de Campaña
 // ============================================================================
-export function SettingsTab({ campaign, onUpdate, isGM = false }) {
+export function SettingsTab({ campaign, onUpdate, isGM = false, onCampaignDeleted = null }) {
   const [name, setName] = useState(campaign?.name || '')
   const [description, setDescription] = useState(campaign?.description || '')
   const [loreSummary, setLoreSummary] = useState(campaign?.lore_summary || '')
@@ -1170,11 +1208,21 @@ export function SettingsTab({ campaign, onUpdate, isGM = false }) {
     if (deleteConfirmText !== campaign.name) return
     setDeleting(true)
     try {
-      await campaignAPI.delete(campaign.id)
-      navigate('/dashboard')
+      const response = await campaignAPI.delete(campaign.id)
+      console.log('✅ Campaign deleted successfully:', response.status)
+      // Cerrar modal primero
+      setShowDeleteModal(false)
+      setDeleteConfirmText('')
+      // Llamar callback para volver a Dashboard
+      if (onCampaignDeleted) {
+        setTimeout(() => {
+          onCampaignDeleted()
+        }, 300)
+      }
     } catch (e) {
-      console.error(e)
+      console.error('❌ Error deleting campaign:', e)
       setDeleting(false)
+      setSaveMsg('⚠️ Error al eliminar: ' + (e?.response?.data?.detail || e.message))
     }
   }
 

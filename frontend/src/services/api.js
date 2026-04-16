@@ -64,6 +64,10 @@ export const characterAPI = {
     api.get(`/characters/${characterId}`),
   update: (characterId, data) =>
     api.put(`/characters/${characterId}`, data),
+  getHistory: (characterId) =>
+    api.get(`/characters/${characterId}/history`),
+  updateStatus: (characterId, isAlive) =>
+    api.put(`/characters/${characterId}/status`, { is_alive: isAlive }),
 }
 
 // Sessions

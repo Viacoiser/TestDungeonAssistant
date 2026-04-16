@@ -277,7 +277,9 @@ export default function Dashboard() {
     }
   }
 
-  const handleBackFromCampaign = () => {
+  const handleBackFromCampaign = async () => {
+    // Recargar campañas para reflejar cambios (ej: eliminación)
+    await loadCampaigns()
     setSelectedCampaign(null)
     setSelectedUserRole('PLAYER')
   }

@@ -355,3 +355,118 @@ class OCRResult(BaseModel):
 
     class Config:
         populate_by_name = True
+
+
+# ============================================================================
+# PHASE 2: SESSION NPC SCHEMAS
+# ============================================================================
+
+class SessionNPCCreate(BaseModel):
+    """Crear NPC encontrado en sesión"""
+    session_id: str
+    campaign_id: str
+    name: str
+    role: Optional[str] = "unknown"
+    confidence: Optional[int] = Field(70, ge=0, le=100)
+    mention_count: Optional[int] = 1
+    details: Optional[Dict[str, Any]] = None
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "session_id": "uuid-123",
+                "campaign_id": "uuid-456",
+                "name": "Gandalf",
+                "role": "quest-giver",
+                "confidence": 85,
+                "details": {"description": "The Wizard from the tower"}
+            }
+        }
+
+
+class SessionNPCResponse(BaseModel):
+    """Respuesta de NPC encontrado"""
+    id: str
+    session_id: str
+    campaign_id: str
+    name: str
+    role: str
+    confidence: int
+    first_mentioned: datetime
+    last_mentioned: datetime
+    mention_count: int
+    details: Dict[str, Any]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ============================================================================
+# PHASE 2: SESSION QUEST SCHEMAS
+# ============================================================================
+
+class SessionQuestCreate(BaseModel):
+    """Crear misión detectada en sesión"""
+    session_id: str
+    campaign_id: str
+    title: str
+    description: Optional[str] = None
+    status: Optional[str] = "active"
+    reward: Optional[str] = None
+    giver_npc: Optional[str] = None
+    detected_in_note_id: Optional[str] = None
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "session_id": "uuid-123",
+                "campaign_id": "uuid-456",
+                "title": "Rescue the stolen artifact",
+                "description": "Find the magical amulet taken by the bandits",
+                "status": "active",
+                "reward": "1000 gold",
+                "giver_npc": "The Mayor"
+            }
+        }
+
+
+class SessionQuestResponse(BaseModel):
+    """Respuesta de misión"""
+    id: str
+    session_id: str
+    campaign_id: str
+    title: str
+    description: Optional[str] = None
+    status: str
+    reward: Optional[str] = None
+    giver_npc: Optional[str] = None
+    detected_in_note_id: Optional[str] = None
+    created_at: datetime
+    completed_at: Optional[datetime] = None
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ============================================================================
+# PHASE 2: ANALYSIS UPDATE SCHEMAS
+# ============================================================================
+
+class NoteCreateWithAnalysis(BaseModel):
+    """Crear nota con análisis automático"""
+    content: str
+    session_id: str
+
+
+class AnalysisResponse(BaseModel):
+    """Respuesta de análisis"""
+    detected_items: List[Dict[str, Any]] = []
+    detected_npcs: List[Dict[str, Any]] = []
+    detected_spells: List[Dict[str, Any]] = []
+    items_count: int = 0
+    npcs_count: int = 0
+    spells_count: int = 0
+    source: str = "hybrid_parallel"
+    performance: Dict[str, Any] = {}

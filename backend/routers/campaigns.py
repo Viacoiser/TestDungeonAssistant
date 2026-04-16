@@ -174,17 +174,53 @@ async def delete_campaign(
     campaign_id: str,
     current_user: dict = Depends(get_current_user)
 ):
-    """Eliminar campaña"""
+    """Eliminar campaña (solo el GM puede hacerlo)"""
     try:
         supabase = get_supabase()
-        supabase.client.table("campaigns") \
-            .delete() \
-            .eq("id", campaign_id) \
-            .execute()
-        return {"message": "Campaña eliminada"}
+        
+        # Verificar que el usuario es GM de la campaña
+        member_check = supabase.client.table("campaign_members").select(
+            "role"
+        ).eq(
+            "campaign_id", campaign_id
+        ).eq(
+            "user_id", current_user["id"]
+        ).execute()
+        
+        if not member_check.data or member_check.data[0]["role"] != "GM":
+            logger.warning(f"❌ Non-GM user {current_user['id']} tried to delete campaign {campaign_id}")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Solo el GM puede eliminar la campaña"
+            )
+        
+        # Obtener datos de la campaña antes de eliminar (para logging)
+        campaign = supabase.client.table("campaigns").select("*").eq("id", campaign_id).single().execute()
+        
+        if not campaign.data:
+            logger.warning(f"Campaign {campaign_id} not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Campaña no encontrada"
+            )
+        
+        campaign_name = campaign.data.get("name", "Unknown")
+        
+        # Eliminar campaña (CASCADE eliminará miembros, personajes, sesiones, etc.)
+        result = supabase.client.table("campaigns").delete().eq("id", campaign_id).execute()
+        
+        logger.info(f"✅ Campaign deleted: {campaign_id} ({campaign_name}) by user {current_user['id']}")
+        
+        return {"message": f"Campaña '{campaign_name}' eliminada correctamente"}
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"❌ Error eliminando campaña: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"❌ Error eliminando campaña {campaign_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al eliminar campaña: {str(e)}"
+        )
 
 
 @router.post("/join")

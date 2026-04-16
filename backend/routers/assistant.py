@@ -82,12 +82,18 @@ async def chat(
         # 5. Llamar a Gemini con contexto acotado
         context = {
             "campaign_name": campaign.get("name", "la campaña"),
+            "campaign_id": data.campaign_id,
+            "user_id": current_user["id"],
             "lore_summary": campaign.get("lore_summary", ""),
             "recent_notes": recent_notes,
             "npcs": npcs
         }
 
-        answer = await gemini.chat_assistant(context, data.question)
+        response = await gemini.chat_assistant(context, data.question)
+        
+        # response es un dict con: answer, tokens_estimated, response_time_ms, rag_entities_total
+        # Extraer solo la respuesta para el cliente
+        answer = response.get("answer", "") if isinstance(response, dict) else str(response)
 
         return {
             "answer": answer,

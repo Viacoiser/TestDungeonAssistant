@@ -140,35 +140,33 @@ CREATE TABLE IF NOT EXISTS session_notes (
 -- ============================================================================
 -- TABLA: session_npcs (Phase 2 - NPC Tracking)
 -- ============================================================================
--- Almacenar NPCs encontrados en cada sesión para análisis histórico
 CREATE TABLE IF NOT EXISTS session_npcs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     session_id UUID NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
     campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
-    role TEXT DEFAULT 'unknown',  -- 'ally', 'enemy', 'neutral', 'quest-giver', 'merchant', 'innkeeper'
-    confidence INTEGER DEFAULT 70,  -- 0-100: confianza de detección
+    role TEXT DEFAULT 'unknown',
+    confidence INTEGER DEFAULT 70 CHECK (confidence >= 0 AND confidence <= 100),
     first_mentioned TIMESTAMPTZ DEFAULT now(),
     last_mentioned TIMESTAMPTZ DEFAULT now(),
     mention_count INTEGER DEFAULT 1,
-    details JSONB DEFAULT '{}',  -- JSON con información adicional
+    details JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ DEFAULT now(),
-    UNIQUE(session_id, name)  -- Un NPC por sesión por nombre
+    UNIQUE(session_id, name)
 );
 
 -- ============================================================================
 -- TABLA: session_quests (Phase 2 - Quest Tracking)
 -- ============================================================================
--- Almacenar misiones/objetivos detectados automáticamente
 CREATE TABLE IF NOT EXISTS session_quests (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     session_id UUID NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
     campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     description TEXT,
-    status TEXT DEFAULT 'active',  -- 'active', 'completed', 'abandoned', 'failed'
-    reward TEXT,  -- JSON con recompensa
-    giver_npc TEXT,  -- Nombre del NPC que dio la misión
+    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'completed', 'abandoned', 'failed')),
+    reward TEXT,
+    giver_npc TEXT,
     detected_in_note_id UUID REFERENCES session_notes(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ DEFAULT now(),
     completed_at TIMESTAMPTZ,
@@ -249,18 +247,17 @@ CREATE INDEX IF NOT EXISTS idx_character_history_created_at ON character_history
 CREATE INDEX IF NOT EXISTS idx_sessions_campaign_id ON sessions(campaign_id);
 CREATE INDEX IF NOT EXISTS idx_session_notes_session_id ON session_notes(session_id);
 CREATE INDEX IF NOT EXISTS idx_session_notes_author_id ON session_notes(author_id);
-CREATE INDEX IF NOT EXISTS idx_factions_campaign_id ON factions(campaign_id);
-CREATE INDEX IF NOT EXISTS idx_npcs_campaign_id ON npcs(campaign_id);
-CREATE INDEX IF NOT EXISTS idx_npcs_faction_id ON npcs(faction_id);
-CREATE INDEX IF NOT EXISTS idx_inventories_character_id ON inventories(character_id);
-CREATE INDEX IF NOT EXISTS idx_role_change_requests_campaign_id ON role_change_requests(campaign_id);
--- Phase 2 Indices
 CREATE INDEX IF NOT EXISTS idx_session_npcs_session_id ON session_npcs(session_id);
 CREATE INDEX IF NOT EXISTS idx_session_npcs_campaign_id ON session_npcs(campaign_id);
 CREATE INDEX IF NOT EXISTS idx_session_npcs_name ON session_npcs(name);
 CREATE INDEX IF NOT EXISTS idx_session_quests_session_id ON session_quests(session_id);
 CREATE INDEX IF NOT EXISTS idx_session_quests_campaign_id ON session_quests(campaign_id);
 CREATE INDEX IF NOT EXISTS idx_session_quests_status ON session_quests(status);
+CREATE INDEX IF NOT EXISTS idx_factions_campaign_id ON factions(campaign_id);
+CREATE INDEX IF NOT EXISTS idx_npcs_campaign_id ON npcs(campaign_id);
+CREATE INDEX IF NOT EXISTS idx_npcs_faction_id ON npcs(faction_id);
+CREATE INDEX IF NOT EXISTS idx_inventories_character_id ON inventories(character_id);
+CREATE INDEX IF NOT EXISTS idx_role_change_requests_campaign_id ON role_change_requests(campaign_id);
 
 -- ============================================================================
 -- TRIGGERS - Auto-update updated_at
@@ -466,7 +463,7 @@ WITH CHECK (
 -- ============================================================================
 -- RLS: session_npcs (Phase 2)
 -- ============================================================================
-CREATE POLICY "Campaign members can view session NPCs"
+CREATE POLICY "Campaign members can view NPCs"
 ON session_npcs FOR SELECT
 USING (
     EXISTS (
@@ -476,7 +473,7 @@ USING (
     )
 );
 
-CREATE POLICY "System can insert session NPCs"
+CREATE POLICY "Campaign members can insert NPCs"
 ON session_npcs FOR INSERT
 WITH CHECK (
     EXISTS (
@@ -499,7 +496,7 @@ USING (
     )
 );
 
-CREATE POLICY "System can insert quests"
+CREATE POLICY "Campaign members can insert quests"
 ON session_quests FOR INSERT
 WITH CHECK (
     EXISTS (
@@ -592,24 +589,44 @@ USING (
 );
 
 -- ============================================================================
--- RLS: role_change_requests
+-- RLS: sessions y session_notes
 -- ============================================================================
-CREATE POLICY "Users can view own requests or if GM"
-ON role_change_requests FOR SELECT
-USING (
-    auth.uid() = requester_id
-    OR EXISTS (
+
+DROP POLICY IF EXISTS "GM can insert sessions" ON sessions;
+DROP POLICY IF EXISTS "Campaign members can insert sessions" ON sessions;
+
+DROP POLICY IF EXISTS "Campaign members can view notes" ON session_notes;
+DROP POLICY IF EXISTS "Members can view own and public notes" ON session_notes;
+DROP POLICY IF EXISTS "Members can insert notes" ON session_notes;
+DROP POLICY IF EXISTS "Members can update own notes" ON session_notes;
+DROP POLICY IF EXISTS "Members can delete own notes" ON session_notes;
+
+-- Nuevas políticas
+CREATE POLICY "Campaign members can insert sessions"
+ON sessions FOR INSERT
+WITH CHECK (
+    EXISTS (
         SELECT 1 FROM campaign_members
-        WHERE campaign_members.campaign_id = role_change_requests.campaign_id
+        WHERE campaign_members.campaign_id = sessions.campaign_id
         AND campaign_members.user_id = auth.uid()
-        AND campaign_members.role = 'GM'
     )
 );
 
-CREATE POLICY "Authenticated users can insert requests"
-ON role_change_requests FOR INSERT
-WITH CHECK (auth.uid() IS NOT NULL);
+CREATE POLICY "Members can view own and public notes"
+ON session_notes FOR SELECT
+USING (
+    auth.uid() = author_id
+    OR is_public = true
+);
 
--- ============================================================================
--- FIN DEL SCHEMA
--- ============================================================================
+CREATE POLICY "Members can insert notes"
+ON session_notes FOR INSERT
+WITH CHECK (auth.uid() = author_id);
+
+CREATE POLICY "Members can update own notes"
+ON session_notes FOR UPDATE
+USING (auth.uid() = author_id);
+
+CREATE POLICY "Members can delete own notes"
+ON session_notes FOR DELETE
+USING (auth.uid() = author_id);

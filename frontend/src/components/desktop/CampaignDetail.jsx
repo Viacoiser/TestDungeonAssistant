@@ -236,6 +236,7 @@ export default function CampaignDetail({ campaign: initialCampaign, userRole, on
                   campaign={campaign}
                   onUpdate={setCampaign}
                   isGM={isGM}
+                  onCampaignDeleted={onBack}
                 />
               )}
             </div>

@@ -82,9 +82,48 @@ class GeminiService:
             raise ValueError("GEMINI_API_KEY debe estar en .env")
 
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel("gemini-2.5-flash")
-        self.vision_model = genai.GenerativeModel("gemini-2.5-flash")
-        logger.info("Gemini Service initialized with gemini-2.5-flash")
+
+        # Modelos a intentar en orden de preferencia
+        available_models = [
+            "gemini-3.1-flash-lite",  # Preferido
+            "gemini-3-flash",         # Alternativa
+            "gemini-2.5-flash",       # Alternativa
+            "gemini-2.5-flash-lite",  # Fallback
+            "gemini-2.0-flash-exp",   # Fallback
+            "gemini-1.5-pro",         # Último recurso
+            "gemini-1.5-flash",
+            "gemini-pro",
+            "gemini-pro-vision"
+        ]
+        
+        self.model = None
+        self.vision_model = None
+        self.model_name = None
+        
+        # Intentar inicializar con cada modelo disponible
+        for model_name in available_models:
+            try:
+                test_model = genai.GenerativeModel(model_name)
+                # Hacer una llamada de prueba para verificar que realmente funciona
+                test_response = test_model.generate_content("test")
+                # Si llegamos aquí sin error, el modelo está disponible
+                self.model = test_model
+                self.vision_model = test_model
+                self.model_name = model_name
+                logger.info(f"✓ Gemini Service initialized with {model_name}")
+                break
+            except Exception as e:
+                logger.debug(f"  Model {model_name} not available: {str(e)[:80]}")
+                continue
+        
+        if not self.model:
+            logger.error("❌ No Gemini models available! Check your API key.")
+            logger.error(f"   Available models tried: {', '.join(available_models)}")
+            logger.error(f"   Verify your API key works at: https://aistudio.google.com")
+            # Usar un dummy model para que no falle el servidor
+            self.model = genai.GenerativeModel("gemini-2.0-flash-exp")
+            self.vision_model = self.model
+            self.model_name = "UNAVAILABLE"
 
     # ========================================================================
     # FUNCTION CALLING: Analizar nota de sesion
@@ -92,11 +131,10 @@ class GeminiService:
 
     async def analyze_session_note(self, note_content: str, context: dict = None) -> dict:
         """
-        Detectar items y NPCs en una nota de sesion usando Function Calling.
-        Usa asyncio.to_thread porque generate_content es sincrono.
-        Puede recibir contexto con info de personaje y campaña.
+        Detectar items y NPCs en una nota de sesion usando JSON estructurado.
+        Es más confiable que Function Calling para este caso de uso.
         """
-        logger.info("Analizando nota de sesion con Function Calling...")
+        logger.info("Analizando nota de sesion...")
 
         truncated_note = note_content[:2000] if len(note_content) > 2000 else note_content
         
@@ -124,116 +162,335 @@ class GeminiService:
                 context_text += "\n"
 
         prompt = (
-            "Analiza esta nota de sesion de D&D y detecta:\n"
-            "1. Items o objetos que el grupo haya encontrado, recibido o comprado\n"
-            "2. NPCs (personajes no jugadores) mencionados por nombre\n\n"
-            "Para cada item encontrado, llama a add_item_to_inventory.\n"
-            "Para cada NPC mencionado, llama a register_npc.\n"
-            "Si no hay items o NPCs, no llames ninguna funcion.\n\n"
+            "Eres un analizador de notas de D&D. Extrae TODOS los items y NPCs mencionados.\n\n"
+            "INSTRUCCIONES:\n"
+            "1. Busca TODOS los items (armas, armaduras, pociones, objetos, etc) - SER EXHAUSTIVO\n"
+            "2. Busca TODOS los NPCs mencionados por nombre\n"
+            "3. Devuelve SOLO JSON válido, nada más\n\n"
             f"{context_text}"
-            "=== NOTA DE SESIÓN ===\n"
-            f"\"\"\"{truncated_note}\"\"\"\n"
+            "NOTA DE SESIÓN:\n"
+            f"\"\"\"{truncated_note}\"\"\"\n\n"
+            "Devuelve JSON exactamente con este formato (solo JSON, nada de texto antes ni después):\n"
+            "{\n"
+            '  "detected_items": [\n'
+            '    {"name": "longsword", "quantity": 1, "is_magical": false, "description": "arma común"}\n'
+            "  ],\n"
+            '  "detected_npcs": [\n'
+            '    {"name": "Muradin", "description": "compañero de aventuras", "relationship": "aliado"}\n'
+            "  ]\n"
+            "}\n"
         )
 
         def _call():
-            return self.model.generate_content(
-                prompt,
-                tools=[session_tools]
-            )
+            if self.model_name == "UNAVAILABLE":
+                logger.debug("Model unavailable, returning empty")
+                return type('obj', (object,), {
+                    'text': '{"detected_items": [], "detected_npcs": []}'
+                })()
+            return self.model.generate_content(prompt)
 
         try:
             response = await asyncio.to_thread(_call)
 
             detected_items = []
             detected_npcs = []
+            
+            logger.debug(f"Response type: {type(response)}")
+            
+            # Intentar extraer JSON de la respuesta
+            response_text = ""
+            if hasattr(response, 'text'):
+                response_text = response.text
+                logger.debug(f"Response text: {response_text[:200]}")
+            
+            # Parsear JSON
+            try:
+                json_start = response_text.find('{')
+                json_end = response_text.rfind('}') + 1
+                if json_start >= 0 and json_end > json_start:
+                    json_str = response_text[json_start:json_end]
+                    logger.debug(f"Extracted JSON: {json_str}")
+                    data = json.loads(json_str)
+                    detected_items = data.get("detected_items", [])
+                    detected_npcs = data.get("detected_npcs", [])
+                    
+                    logger.info(f"✓ Parsed JSON: {len(detected_items)} items, {len(detected_npcs)} NPCs")
+                else:
+                    logger.warning("❌ No JSON found in response")
+            except json.JSONDecodeError as e:
+                logger.error(f"❌ JSON parse error: {e}")
+                logger.debug(f"Full response text: {response_text}")
 
-            if response.candidates:
-                for candidate in response.candidates:
-                    if candidate.content and candidate.content.parts:
-                        for part in candidate.content.parts:
-                            if hasattr(part, 'function_call') and part.function_call:
-                                fn = part.function_call
-                                args = dict(fn.args)
+            if detected_items:
+                for item in detected_items:
+                    logger.info(f"  ✓ Item detected: {item.get('name', '?')} (qty: {item.get('quantity', 1)})")
+            
+            if detected_npcs:
+                for npc in detected_npcs:
+                    logger.info(f"  ✓ NPC detected: {npc.get('name', '?')}")
 
-                                if fn.name == "add_item_to_inventory":
-                                    detected_items.append({
-                                        "item_name": args.get("item_name", ""),
-                                        "quantity": args.get("quantity", 1),
-                                        "is_magical": args.get("is_magical", False),
-                                        "description": args.get("description", "")
-                                    })
-                                elif fn.name == "register_npc":
-                                    detected_npcs.append({
-                                        "name": args.get("name", ""),
-                                        "description": args.get("description", ""),
-                                        "relationship": args.get("relationship", "desconocido")
-                                    })
-
-            logger.info(f"Detectados {len(detected_items)} items y {len(detected_npcs)} NPCs")
+            logger.info(f"✓ Analysis complete: {len(detected_items)} items, {len(detected_npcs)} NPCs")
             return {
                 "detected_items": detected_items,
                 "detected_npcs": detected_npcs
             }
 
         except Exception as e:
-            logger.error(f"Error en analyze_session_note: {e}")
+            logger.error(f"❌ Error en analyze_session_note: {e}", exc_info=True)
             return {"detected_items": [], "detected_npcs": []}
 
     # ========================================================================
     # RAG: Asistente conversacional con contexto limitado
     # ========================================================================
 
-    async def chat_assistant(self, context: dict, question: str) -> str:
+    def _get_rag_context(self, db_client, campaign_id: str) -> dict:
         """
-        Asistente RAG con contexto limitado.
-        Usa asyncio.to_thread porque generate_content es sincrono.
+        Obtener contexto RAG de forma sincrónica
+        (El cliente de Supabase es sincrónico, no asincrónico)
         """
-        logger.info(f"Respondiendo pregunta con RAG: {question[:60]}...")
-
-        campaign_name = context.get("campaign_name") or "la campana"
-        lore_summary = context.get("lore_summary") or "Sin informacion de trasfondo disponible."
-
-        recent_notes = (context.get("recent_notes") or [])[-3:]
-        notes_text = ""
-        for i, note in enumerate(recent_notes, 1):
-            content = (note.get("content") or "")[:500]
-            notes_text += f"\nNota {i}: {content}"
-
-        npcs = context.get("npcs") or []
-        npcs_text = ""
-        if npcs:
-            npcs_list = [
-                f"- {npc.get('name', '?')} ({npc.get('relationship_to_party', 'desconocido')})"
-                for npc in npcs[:10]
-            ]
-            npcs_text = "\n".join(npcs_list)
-
-        prompt = (
-            f"Eres el Asistente del Dungeon Master para la campana de D&D \"{campaign_name}\".\n"
-            "Responde de forma concisa y util basandote en el contexto disponible.\n"
-            "Si la informacion no esta en el contexto, dilo claramente.\n\n"
-            "=== TRASFONDO DE LA CAMPANA ===\n"
-            f"{lore_summary}\n\n"
-            "=== NOTAS RECIENTES (ultimas sesiones) ===\n"
-            f"{notes_text if notes_text else 'Sin notas de sesion disponibles.'}\n\n"
-            "=== NPCs CONOCIDOS ===\n"
-            f"{npcs_text if npcs_text else 'Ninguno registrado.'}\n\n"
-            "=== PREGUNTA DEL JUGADOR ===\n"
-            f"{question}\n\n"
-            "Responde en espanol, de forma concisa (maximo 3 parrafos):"
-        )
-
-        def _call():
-            return self.model.generate_content(prompt)
-
         try:
+            # Obtener entidades
+            try:
+                entities_result = db_client.table("rag_entities").select("*").match({
+                    "campaign_id": campaign_id
+                }).order("mention_count", desc=True).limit(10).execute()
+            except Exception as e:
+                logger.debug(f"RAG entities table not available: {str(e)[:30]}")
+                entities_result = type('obj', (object,), {'data': []})()
+            
+            # Agrupar por tipo
+            entities_by_type = {}
+            for entity in entities_result.data or []:
+                entity_type = entity.get("entity_type", "OTHER")
+                if entity_type not in entities_by_type:
+                    entities_by_type[entity_type] = []
+                entities_by_type[entity_type].append(entity)
+            
+            # Obtener eventos (últimas sesiones)
+            try:
+                events_result = db_client.table("rag_events").select("*").match({
+                    "campaign_id": campaign_id
+                }).order("session_number", desc=True).limit(5).execute()
+            except Exception as e:
+                logger.debug(f"RAG events table not available: {str(e)[:30]}")
+                events_result = type('obj', (object,), {'data': []})()
+            
+            return {
+                "npcs": entities_by_type.get("NPC", []),
+                "locations": entities_by_type.get("LOCATION", []),
+                "quests": entities_by_type.get("QUEST", []),
+                "items": entities_by_type.get("ITEM", []),
+                "events": events_result.data or [],
+                "total_entities": len(entities_result.data or [])
+            }
+        except Exception as e:
+            logger.warn(f"RAG context fallback: {e}")
+            return {
+                "npcs": [],
+                "locations": [],
+                "quests": [],
+                "items": [],
+                "events": [],
+                "total_entities": 0
+            }
+
+    async def chat_assistant(self, context: dict, question: str) -> dict:
+        """
+        Asistente RAG simple (Phase 3).
+        
+        Flow:
+        1. Obtener contexto de RAG desde BD (si existe)
+        2. Combinar con contexto tradicional (lore, NPCs, notas recientes)
+        3. Generar respuesta con contexto estructurado
+        4. Rastrear token usage
+        
+        Returns:
+        {
+            "answer": str,
+            "tokens_estimated": int,
+            "response_time_ms": int,
+            "rag_entities_total": int
+        }
+        """
+        import time
+        start_time = time.time()
+        
+        try:
+            from services.supabase import SupabaseClient
+            
+            logger.info(f"Respondiendo pregunta con RAG: {question[:60]}...")
+            
+            campaign_id = context.get("campaign_id")
+            campaign_name = context.get("campaign_name", "la campaña")
+            lore_summary = context.get("lore_summary", "")
+            recent_notes = context.get("recent_notes", [])
+            npcs_context = context.get("npcs", [])
+            
+            # ================================================================
+            # CONSTRUIR CONTEXTO COMPLETO
+            # ================================================================
+            
+            context_text = f"Eres el Asistente del Dungeon Master para la campaña de D&D \"{campaign_name}\".\n\n"
+            
+            # Lore de la campaña
+            if lore_summary:
+                context_text += f"=== LORE DE LA CAMPAÑA ===\n{lore_summary}\n\n"
+            
+            # NPCs conocidos (del contexto tradicional)
+            if npcs_context:
+                context_text += "=== NPCs CONOCIDOS ===\n"
+                for npc in npcs_context[:10]:
+                    npc_name = npc.get("name", "Unknown")
+                    relationship = npc.get("relationship_to_party", "neutral")
+                    context_text += f"- {npc_name} ({relationship})\n"
+                context_text += "\n"
+            
+            # Notas recientes
+            if recent_notes:
+                context_text += "=== NOTAS DE SESIONES RECIENTES ===\n"
+                for note in recent_notes[:6]:
+                    content = note.get("content", "")[:100]
+                    created = note.get("created_at", "")
+                    context_text += f"- {content}... ({created})\n"
+                context_text += "\n"
+            
+            # ================================================================
+            # OBTENER CONTEXTO DE RAG (si tabla existe)
+            # ================================================================
+            
+            rag_entities_total = 0
+            rag_npcs_count = 0
+            rag_items_count = 0
+            
+            if campaign_id:
+                try:
+                    supabase_client = SupabaseClient()
+                    
+                    # Obtener contexto RAG usando executor (cliente es sync)
+                    loop = asyncio.get_event_loop()
+                    rag_data = await loop.run_in_executor(
+                        None,
+                        lambda: self._get_rag_context(supabase_client.client, campaign_id)
+                    )
+                    rag_entities_total = rag_data.get("total_entities", 0) if rag_data else 0
+                    
+                    # Formatear contexto RAG (si hay datos)
+                    npcs_rag = rag_data.get("npcs", [])
+                    items_rag = rag_data.get("items", [])
+                    rag_npcs_count = len(npcs_rag)
+                    rag_items_count = len(items_rag)
+                    
+                    if npcs_rag or items_rag:
+                        context_text += "=== ENTIDADES DEL RAG (más mencionadas) ===\n"
+                        for npc in npcs_rag[:5]:
+                            context_text += f"- {npc.get('entity_name')} ({npc.get('mention_count')} menciones)\n"
+                        for item in items_rag[:5]:
+                            context_text += f"- {item.get('entity_name')} (item)\n"
+                        context_text += "\n"
+                    
+                    logger.info(f"✓ RAG context: {rag_entities_total} total ({rag_npcs_count} NPCs, {rag_items_count} items)")
+                
+                except Exception as e:
+                    logger.debug(f"⚠ RAG no disponible (usando contexto tradicional): {str(e)[:50]}")
+            
+            # Registrar qué contexto se usó
+            logger.info(f"  Context used: NPCs={len(npcs_context)}, Notes={len(recent_notes)}, Lore={'yes' if lore_summary else 'no'}, RAG={rag_entities_total}")
+            
+            # ================================================================
+            # GENERAR PROMPT CON CONTEXTO COMPLETO
+            # ================================================================
+            
+            prompt = f"""{context_text}
+Responde de forma concisa y útil basándote en el contexto disponible.
+Si la información específica no está en el contexto, dilo claramente.
+
+=== PREGUNTA DEL JUGADOR ===
+{question}
+
+Responde en español, de forma concisa (máximo 3 párrafos):"""
+            
+            # ================================================================
+            # GENERAR RESPUESTA CON GEMINI
+            # ================================================================
+            
+            def _call():
+                if self.model_name == "UNAVAILABLE":
+                    raise ValueError(
+                        "❌ No hay modelos de Gemini disponibles.\n"
+                        "Verifica tu API key en Google AI Studio."
+                    )
+                return self.model.generate_content(prompt)
+            
             response = await asyncio.to_thread(_call)
             answer = response.text.strip()
-            logger.info("Respuesta del asistente generada correctamente")
-            return answer
+            
+            response_time = time.time() - start_time
+            
+            # Estimación rough de tokens
+            tokens_in_prompt = len(prompt) // 4  # ~4 chars = 1 token
+            tokens_in_answer = len(answer) // 4
+            total_tokens_est = tokens_in_prompt + tokens_in_answer
+            
+            logger.info(f"✓ Respuesta generada ({response_time:.2f}s, ~{total_tokens_est} tokens)")
+            
+            # ================================================================
+            # RASTREAR TOKEN USAGE (Async, non-blocking)
+            # ================================================================
+            
+            try:
+                user_id = context.get("user_id")
+                
+                def log_token_usage_sync():
+                    """Registrar token usage en background - sincrónico"""
+                    try:
+                        from services.supabase import SupabaseClient
+                        supabase_client = SupabaseClient()
+                        
+                        # Token usage table es opcional, pero si no existe no bloquea
+                        try:
+                            supabase_client.client.table("token_usage").insert({
+                                "campaign_id": campaign_id,
+                                "user_id": user_id,
+                                "question": question[:255],
+                                "answer_length": len(answer),
+                                "tokens_estimated": total_tokens_est,
+                                "compression_level": "rag_simple",  # Fixed: RAG simple
+                                "response_time_ms": int(response_time * 1000)
+                            }).execute()
+                            
+                            logger.debug(f"✓ Token usage logged: {total_tokens_est} tokens (RAG simple)")
+                        except Exception as db_error:
+                            logger.debug(f"⚠ Token table not available: {str(db_error)[:50]}")
+                    
+                    except Exception as e:
+                        logger.warn(f"⚠ Token tracking error (non-critical): {e}")
+                
+                loop = asyncio.get_event_loop()
+                asyncio.create_task(loop.run_in_executor(None, log_token_usage_sync))
+            
+            except Exception as e:
+                logger.warn(f"⚠ Token tracking setup error (non-critical): {e}")
+            
+            # ================================================================
+            # RESPONDER CON METADATA
+            # ================================================================
+            
+            return {
+                "answer": answer,
+                "tokens_estimated": total_tokens_est,
+                "response_time_ms": int(response_time * 1000),
+                "rag_entities_total": rag_entities_total
+            }
+        
         except Exception as e:
-            logger.error(f"Error en chat_assistant: {e}")
-            raise
+            logger.error(f"Error en chat_assistant: {e}", exc_info=True)
+            # Retornar error en lugar de hacer raise para no romper el endpoint
+            return {
+                "answer": f"Error generando respuesta: {str(e)[:100]}",
+                "tokens_estimated": 0,
+                "response_time_ms": int((time.time() - start_time) * 1000),
+                "rag_entities_total": 0
+            }
 
     # ========================================================================
     # Generar NPC con contexto de campana
@@ -276,6 +533,12 @@ class GeminiService:
         )
 
         def _call():
+            if self.model_name == "UNAVAILABLE":
+                raise ValueError(
+                    "❌ No hay modelos de Gemini disponibles.\n"
+                    "Verifica tu API key en Google AI Studio.\n"
+                    "Modelos disponibles: gemini-2.0-flash-exp, gemini-1.5-pro, gemini-1.5-flash, gemini-pro"
+                )
             return self.model.generate_content(full_prompt)
 
         try:
@@ -301,9 +564,57 @@ class GeminiService:
                 "relationship_to_party": "neutral",
                 "stats": {"CR": 1, "HP": 20, "AC": 10}
             }
-        except Exception as e:
+        except ValueError as e:
+            # Error de API no disponible
             logger.error(f"Error en generate_npc: {e}")
-            raise
+            # Generar NPC básico desde el prompt
+            import random
+            races = ["human", "elf", "dwarf", "halfling", "dragonborn", "gnome", "tiefling"]
+            personalities = [
+                "Aventurero y audaz",
+                "Cauteloso y reflexivo",
+                "Misterioso y enigmático",
+                "Amable y compasivo",
+                "Astuto y calculador",
+                "Leal y honorable"
+            ]
+            relationships = ["aliado", "enemigo", "neutral"]
+            
+            # Extraer nombre del prompt si es posible
+            name_hint = prompt[:50] if prompt else "NPC"
+            
+            return {
+                "name": f"NPC #{random.randint(100, 999)}",
+                "race": random.choice(races),
+                "personality": f"{name_hint} - {random.choice(personalities)}",
+                "secrets": "Guarda un secreto importante para la campaña",
+                "relationship_to_party": random.choice(relationships),
+                "skills": "Varia según la clase",
+                "stats": {
+                    "STR": str(random.randint(-2, 3)),
+                    "DEX": str(random.randint(-2, 3)),
+                    "CON": str(random.randint(-2, 3)),
+                    "INT": str(random.randint(-2, 3)),
+                    "WIS": str(random.randint(-2, 3)),
+                    "CHA": str(random.randint(-2, 3)),
+                    "HP": random.randint(15, 50),
+                    "AC": random.randint(10, 16),
+                    "CR": round(random.uniform(0.5, 3), 1)
+                },
+                "warning": "⚠️ API de Gemini no disponible. NPC generado con valores aleatorios. Edita manualmente para personalizarlo."
+            }
+        except Exception as e:
+            logger.error(f"Error en generate_npc: {e}", exc_info=True)
+            # Retornar NPC fallback en lugar de fallar completamente
+            return {
+                "name": "NPC Generado",
+                "race": "human",
+                "personality": prompt,
+                "secrets": "Desconocido",
+                "relationship_to_party": "neutral",
+                "stats": {"CR": 1, "HP": 20, "AC": 10},
+                "error": str(e)[:100]
+            }
 
     # ========================================================================
     # Generar resumen de sesion
@@ -328,6 +639,10 @@ class GeminiService:
         )
 
         def _call():
+            if self.model_name == "UNAVAILABLE":
+                return type('obj', (object,), {
+                    'text': "Resumen no disponible - API de Gemini no configurada."
+                })()
             return self.model.generate_content(prompt)
 
         try:
@@ -350,6 +665,10 @@ class GeminiService:
             "No uses comillas. Solo la frase."
         )
         def _call():
+            if self.model_name == "UNAVAILABLE":
+                return type('obj', (object,), {
+                    'text': "Rasgo no disponible"
+                })()
             return self.model.generate_content(prompt)
         try:
             response = await asyncio.to_thread(_call)
