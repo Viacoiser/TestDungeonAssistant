@@ -199,55 +199,56 @@ async def get_event_by_session(
 
 
 # ============================================================================
-# GET: Token usage analytics
+# GET: Token usage analytics - DISABLED
+# (Token tracking removed - table token_usage_daily no longer exists)
 # ============================================================================
 
-@router.get("/analytics/tokens")
-async def get_token_analytics(
-    campaign_id: str,
-    days: int = 7,
-    current_user: dict = Depends(get_current_user)
-):
-    """Obtener analytics de consumo de tokens (últimos N días)"""
-    
-    try:
-        supabase = get_supabase()
-        
-        # Verificar acceso + que sea GM
-        member = supabase.client.table("campaign_members") \
-            .select("role") \
-            .match({"campaign_id": campaign_id, "user_id": current_user["id"]}) \
-            .single() \
-            .execute()
-        
-        if not member.data or member.data.get("role") != "GM":
-            raise HTTPException(status_code=403, detail="Solo GMs pueden ver analytics")
-        
-        # Obtener stats
-        result = supabase.client.table("token_usage_daily").select("*") \
-            .eq("campaign_id", campaign_id) \
-            .limit(days) \
-            .execute()
-        
-        # Calcular totales
-        total_questions = sum(row.get("questions_asked", 0) for row in result.data)
-        total_tokens = sum(row.get("total_tokens", 0) for row in result.data)
-        avg_tokens = total_tokens / total_questions if total_questions > 0 else 0
-        
-        return {
-            "campaign_id": campaign_id,
-            "period_days": days,
-            "daily_stats": result.data,
-            "totals": {
-                "questions_asked": total_questions,
-                "total_tokens": total_tokens,
-                "avg_tokens_per_question": round(avg_tokens, 2),
-                "estimated_cost_usd": round(total_tokens * 0.00006, 2)
-            }
-        }
-    
-    except HTTPException as e:
-        raise e
+# @router.get("/analytics/tokens")
+# async def get_token_analytics(
+#     campaign_id: str,
+#     days: int = 7,
+#     current_user: dict = Depends(get_current_user)
+# ):
+#     """Obtener analytics de consumo de tokens (últimos N días)"""
+#     
+#     try:
+#         supabase = get_supabase()
+#         
+#         # Verificar acceso + que sea GM
+#         member = supabase.client.table("campaign_members") \
+#             .select("role") \
+#             .match({"campaign_id": campaign_id, "user_id": current_user["id"]}) \
+#             .single() \
+#             .execute()
+#         
+#         if not member.data or member.data.get("role") != "GM":
+#             raise HTTPException(status_code=403, detail="Solo GMs pueden ver analytics")
+#         
+#         # Obtener stats
+#         result = supabase.client.table("token_usage_daily").select("*") \
+#             .eq("campaign_id", campaign_id) \
+#             .limit(days) \
+#             .execute()
+#         
+#         # Calcular totales
+#         total_questions = sum(row.get("questions_asked", 0) for row in result.data)
+#         total_tokens = sum(row.get("total_tokens", 0) for row in result.data)
+#         avg_tokens = total_tokens / total_questions if total_questions > 0 else 0
+#         
+#         return {
+#             "campaign_id": campaign_id,
+#             "period_days": days,
+#             "daily_stats": result.data,
+#             "totals": {
+#                 "questions_asked": total_questions,
+#                 "total_tokens": total_tokens,
+#                 "avg_tokens_per_question": round(avg_tokens, 2),
+#                 "estimated_cost_usd": round(total_tokens * 0.00006, 2)
+#             }
+#         }
+#     
+#     except HTTPException as e:
+#         raise e
     except Exception as e:
         logger.error(f"Error obteniendo analytics: {e}")
         raise HTTPException(status_code=500, detail=str(e))

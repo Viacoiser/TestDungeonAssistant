@@ -68,21 +68,7 @@ CREATE TABLE IF NOT EXISTS rag_events (
 COMMENT ON TABLE rag_events IS 'Resumen ultra-comprimido de cada sesión. Se mantiene histórico.';
 COMMENT ON COLUMN rag_events.event_summary IS 'Ultra-comprimido. Máx 50 palabras. Ej: "Party defeated goblin tribe, found map to ancient temple."';
 
--- Tabla: token_usage
--- Analytics para monitorear consumo de tokens
-CREATE TABLE IF NOT EXISTS token_usage (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    question TEXT,
-    answer_length INTEGER,  -- Characters en respuesta
-    tokens_estimated INTEGER,
-    compression_level TEXT DEFAULT 'rag_simple',  -- Fixed: RAG simple (no compression)
-    response_time_ms INTEGER,  -- Milliseconds para procesar
-    created_at TIMESTAMPTZ DEFAULT now()
-);
-
-COMMENT ON TABLE token_usage IS 'Analytics de consumo. Usar para optimizations futuras.';
+-- token_usage table removed (not tracking token metrics)
 
 -- ============================================================================
 -- ÍNDICES OPTIMIZADOS PARA RAG
@@ -108,9 +94,7 @@ ON rag_relationships(campaign_id, source_entity_id);
 CREATE INDEX IF NOT EXISTS idx_rag_events_session_number 
 ON rag_events(campaign_id, session_number DESC);
 
--- Token analytics por campaña
-CREATE INDEX IF NOT EXISTS idx_token_usage_campaign_date 
-ON token_usage(campaign_id, created_at DESC);
+-- Token indices removed
 
 -- ============================================================================
 -- VISTAS PARA ANALYTICS
@@ -118,21 +102,6 @@ ON token_usage(campaign_id, created_at DESC);
 
 -- Vista: Token usage stats por día
 CREATE OR REPLACE VIEW token_usage_daily AS
-SELECT
-    campaign_id,
-    DATE(created_at) as date,
-    COUNT(*) as questions_asked,
-    COUNT(DISTINCT user_id) as unique_users,
-    AVG(tokens_estimated) as avg_tokens,
-    SUM(tokens_estimated) as total_tokens,
-    AVG(response_time_ms) as avg_response_ms,
-    MAX(response_time_ms) as max_response_ms
-FROM token_usage
-GROUP BY campaign_id, DATE(created_at)
-ORDER BY campaign_id, date DESC;
-
--- Vista: Entity popularity
-CREATE OR REPLACE VIEW entity_popularity AS
 SELECT
     campaign_id,
     entity_type,
@@ -182,7 +151,6 @@ USING (true);
 -- RAG_EVENTS: El backend valida acceso
 CREATE POLICY "RAG events SELECT permissive"
 ON rag_events FOR SELECT
-USING (true);
 
 -- TOKEN_USAGE: Solo usuarios autenticados pueden insertar
 CREATE POLICY "Token usage INSERT permissive"

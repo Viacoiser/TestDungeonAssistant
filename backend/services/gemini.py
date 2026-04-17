@@ -426,50 +426,7 @@ Responde en español, de forma concisa (máximo 3 párrafos):"""
             
             response_time = time.time() - start_time
             
-            # Estimación rough de tokens
-            tokens_in_prompt = len(prompt) // 4  # ~4 chars = 1 token
-            tokens_in_answer = len(answer) // 4
-            total_tokens_est = tokens_in_prompt + tokens_in_answer
-            
-            logger.info(f"✓ Respuesta generada ({response_time:.2f}s, ~{total_tokens_est} tokens)")
-            
-            # ================================================================
-            # RASTREAR TOKEN USAGE (Async, non-blocking)
-            # ================================================================
-            
-            try:
-                user_id = context.get("user_id")
-                
-                def log_token_usage_sync():
-                    """Registrar token usage en background - sincrónico"""
-                    try:
-                        from services.supabase import SupabaseClient
-                        supabase_client = SupabaseClient()
-                        
-                        # Token usage table es opcional, pero si no existe no bloquea
-                        try:
-                            supabase_client.client.table("token_usage").insert({
-                                "campaign_id": campaign_id,
-                                "user_id": user_id,
-                                "question": question[:255],
-                                "answer_length": len(answer),
-                                "tokens_estimated": total_tokens_est,
-                                "compression_level": "rag_simple",  # Fixed: RAG simple
-                                "response_time_ms": int(response_time * 1000)
-                            }).execute()
-                            
-                            logger.debug(f"✓ Token usage logged: {total_tokens_est} tokens (RAG simple)")
-                        except Exception as db_error:
-                            logger.debug(f"⚠ Token table not available: {str(db_error)[:50]}")
-                    
-                    except Exception as e:
-                        logger.warn(f"⚠ Token tracking error (non-critical): {e}")
-                
-                loop = asyncio.get_event_loop()
-                asyncio.create_task(loop.run_in_executor(None, log_token_usage_sync))
-            
-            except Exception as e:
-                logger.warn(f"⚠ Token tracking setup error (non-critical): {e}")
+            logger.info(f"✓ Chat response generated ({response_time:.2f}s)")
             
             # ================================================================
             # RESPONDER CON METADATA
@@ -477,7 +434,6 @@ Responde en español, de forma concisa (máximo 3 párrafos):"""
             
             return {
                 "answer": answer,
-                "tokens_estimated": total_tokens_est,
                 "response_time_ms": int(response_time * 1000),
                 "rag_entities_total": rag_entities_total
             }
@@ -487,7 +443,6 @@ Responde en español, de forma concisa (máximo 3 párrafos):"""
             # Retornar error en lugar de hacer raise para no romper el endpoint
             return {
                 "answer": f"Error generando respuesta: {str(e)[:100]}",
-                "tokens_estimated": 0,
                 "response_time_ms": int((time.time() - start_time) * 1000),
                 "rag_entities_total": 0
             }

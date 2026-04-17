@@ -91,16 +91,17 @@ async def chat(
 
         response = await gemini.chat_assistant(context, data.question)
         
-        # response es un dict con: answer, tokens_estimated, response_time_ms, rag_entities_total
-        # Extraer solo la respuesta para el cliente
+        # response es un dict con: answer, response_time_ms, rag_entities_total
         answer = response.get("answer", "") if isinstance(response, dict) else str(response)
+        rag_entities = response.get("rag_entities_total", 0) if isinstance(response, dict) else 0
 
         return {
             "answer": answer,
             "context_used": {
                 "has_lore": bool(campaign.get("lore_summary")),
                 "notes_used": len(recent_notes),
-                "npcs_known": len(npcs)
+                "npcs_known": len(npcs),
+                "rag_entities_used": rag_entities
             }
         }
 
