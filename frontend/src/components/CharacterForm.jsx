@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useDndData } from '../hooks/useDndData'
 import { useDnd5eAPI } from '../hooks/useDnd5eAPI'
-import { Save, AlertCircle, Plus, Trash2, Search } from 'lucide-react'
+import { Save, AlertCircle, Plus, Trash2, Search, Upload, X } from 'lucide-react'
 import { commonItems } from '../services/equipmentService'
 
 export default function CharacterForm({ campaignId, onSubmit, loading }) {
@@ -39,12 +39,15 @@ export default function CharacterForm({ campaignId, onSubmit, loading }) {
     equipment: '',
     features_traits: '',
     backstory: '',
+    image_url: null,
   })
 
   const [errors, setErrors] = useState({})
   const [searchTerm, setSearchTerm] = useState('')
   const [startingEquipment, setStartingEquipment] = useState([])
   const [selectedCategory, setSelectedCategory] = useState('weapon')
+  const [imagePreview, setImagePreview] = useState(null)
+  const fileInputRef = React.useRef(null)
 
   // Get unique categories
   const categories = [...new Set(commonItems.map(item => item.category))].sort()
@@ -132,6 +135,33 @@ export default function CharacterForm({ campaignId, onSubmit, loading }) {
     return Object.keys(newErrors).length === 0
   }
 
+  const handleImageSelect = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validar tamaño
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors(prev => ({ ...prev, image: 'La imagen no debe superar 5MB' }))
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        setImagePreview(event.target.result)
+        setFormData(prev => ({ ...prev, image_url: event.target.result }))
+        setErrors(prev => ({ ...prev, image: '' }))
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleRemoveImage = () => {
+    setImagePreview(null)
+    setFormData(prev => ({ ...prev, image_url: null }))
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
   const handleSubmit = (e) => {
     e.preventDefault()
     
@@ -162,6 +192,7 @@ export default function CharacterForm({ campaignId, onSubmit, loading }) {
         equipment: JSON.stringify(startingEquipment),
         features_traits: formData.features_traits,
         backstory: formData.backstory,
+        image_url: formData.image_url,
       }
       onSubmit(submitData)
     }
@@ -326,6 +357,66 @@ export default function CharacterForm({ campaignId, onSubmit, loading }) {
             </select>
           </div>
         </div>
+      </div>
+
+      {/* Image Section */}
+      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+        <h2 className="text-xl font-bold text-yellow-600 mb-6">🖼️ Imagen del Personaje</h2>
+
+        {/* Image Preview */}
+        <div className="mb-4">
+          {imagePreview ? (
+            <div className="relative">
+              <img
+                src={imagePreview}
+                alt="Vista previa del personaje"
+                className="w-full h-48 object-cover rounded-lg border border-gray-600"
+              />
+              <button
+                onClick={handleRemoveImage}
+                type="button"
+                className="absolute top-2 right-2 p-2 bg-red-600 hover:bg-red-700 rounded-full transition-colors"
+              >
+                <X size={20} className="text-white" />
+              </button>
+            </div>
+          ) : (
+            <div className="w-full h-48 border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center bg-gray-700/30 hover:bg-gray-700/50 transition-colors cursor-pointer"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <div className="text-center">
+                <Upload size={32} className="text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-300 font-medium">Haz clic para subir una imagen</p>
+                <p className="text-gray-500 text-sm">PNG, JPG, WebP • Máx 5MB</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* File Input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleImageSelect}
+          className="hidden"
+        />
+
+        {/* Upload Button */}
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          type="button"
+          className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+        >
+          <Upload size={18} />
+          {imagePreview ? 'Cambiar Imagen' : 'Subir Imagen'}
+        </button>
+
+        {errors.image && <p className="text-red-400 text-sm mt-2">{errors.image}</p>}
+
+        <p className="text-gray-400 text-sm mt-4 text-center">
+          La imagen se mostrará en la tarjeta del personaje y será visible para otros jugadores
+        </p>
       </div>
 
       {/* Abilities Section */}

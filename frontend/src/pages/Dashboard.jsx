@@ -11,6 +11,7 @@ import DiceBoxRoller from '../components/desktop/DiceBoxRoller'
 import CharacterCard from '../components/CharacterCard'
 import TraitsReference from '../components/TraitsReference'
 import EquipmentReference from '../components/EquipmentReference'
+import SettingsPanel from '../components/SettingsPanel'
 
 const labelStyle = {
   display: 'block',
@@ -430,6 +431,7 @@ export default function Dashboard() {
                       setInsertCharacterError('')
                       setShowInsertCharacterModal(true)
                     }}
+                    onCharacterUpdated={loadCharacters}
                   />
                 ) : (
                   <>
@@ -770,7 +772,7 @@ export default function Dashboard() {
           
           {characters.length === 0 && (
             <div style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 8, padding: '0.75rem', marginBottom: '1rem', color: '#93c5fd', fontSize: '0.875rem' }}>
-              ℹ️ Primero crea un personaje before puedas insertarlo en una campaña
+              ℹ️ Primero crea un personaje antes que puedas insertarlo en una campaña
             </div>
           )}
 
@@ -787,7 +789,7 @@ export default function Dashboard() {
                     cursor: 'pointer',
                   }}
                 >
-                  <option value="">-- Elige un personaje --</option>
+                  <option value="">--Elige un personaje--</option>
                   {characters.map((char) => (
                     <option key={char.id} value={char.id}>
                       {char.name} - Nivel {char.level} {char.class} ({char.race})
@@ -856,7 +858,7 @@ export default function Dashboard() {
                         cursor: 'pointer',
                       }}
                     >
-                      <option value="">-- Elige una campaña --</option>
+                      <option value="">--Elige una campaña--</option>
                       {campaigns.map((camp) => (
                         <option key={camp.id} value={camp.id}>
                           {camp.name} {camp.user_role === 'GM' ? '[Tu campaña - GM]' : '[Jugador]'}
@@ -998,7 +1000,7 @@ function CreateCharacterView({ onBack, onSubmit, loading, error }) {
 }
 
 /* ── Sidebar Tab Content Placeholder ── */
-function SidebarTabContent({ tab, onCreateCharacter, onSelectCharacter, characters = [], loading, searchQuery, user, campaigns = [], onOpenInsertCharacterModal }) {
+function SidebarTabContent({ tab, onCreateCharacter, onSelectCharacter, characters = [], loading, searchQuery, user, campaigns = [], onOpenInsertCharacterModal, onCharacterUpdated }) {
   const tabLabels = {
     characters: { label: 'Personajes', icon: '🧙' },
     traits: { label: 'Rasgos', icon: '📜' },
@@ -1013,6 +1015,7 @@ function SidebarTabContent({ tab, onCreateCharacter, onSelectCharacter, characte
   if (tab === 'dicebox') return <DiceBoxRoller />
   if (tab === 'traits') return <TraitsReference />
   if (tab === 'equipment') return <EquipmentReference />
+  if (tab === 'settings') return <SettingsPanel characters={characters} onCharacterUpdated={onCharacterUpdated} />
 
   if (tab === 'characters') {
     return (
@@ -1491,7 +1494,7 @@ const btnStyles = {
     textTransform: 'uppercase',
   },
   accent: {
-    background: 'linear-gradient(135deg, #065f46, #059669)',
+    background: 'linear-gradient(135deg, rgb(181, 133, 46), #c9873cff)',
     color: '#fff', border: 'none', borderRadius: 12,
     padding: '0.65rem 1.25rem', fontWeight: 700, cursor: 'pointer', fontSize: '0.875rem', flex: 1,
     transition: 'opacity 0.2s',
@@ -1605,8 +1608,21 @@ function CharacterInspectSplitView({ inspectingCharacter, characters, onClose, o
                     color: '#fbbf24',
                     textShadow: '0 0 10px rgba(217,83,30,0.5)',
                     flexShrink: 0,
+                    overflow: 'hidden',
                   }}>
-                    {char.name?.[0]?.toUpperCase() || '?'}
+                    {char.image_url ? (
+                      <img
+                        src={char.image_url}
+                        alt={char.name}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                        }}
+                      />
+                    ) : (
+                      char.name?.[0]?.toUpperCase() || '?'
+                    )}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{

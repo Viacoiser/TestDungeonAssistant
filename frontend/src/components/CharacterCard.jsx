@@ -43,8 +43,21 @@ export default function CharacterCard({ character, onSelect, index }) {
           fontFamily: 'Almendra, serif', fontSize: '2rem', fontWeight: 500,
           color: '#fbbf24',
           textShadow: '0 0 10px rgba(217,83,30,0.5)',
+          overflow: 'hidden',
         }}>
-          {getAvatarContent()}
+          {character.image_url ? (
+            <img
+              src={character.image_url}
+              alt={character.name}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
+            />
+          ) : (
+            getAvatarContent()
+          )}
         </div>
         <div>
           <h3 style={{

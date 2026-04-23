@@ -11,6 +11,9 @@ import {
   LogOut,
   ChevronDown,
   BookOpen,
+  SmilePlus,
+  Sword,
+  Dice6,
 } from 'lucide-react'
 
 const NAV_SECTIONS = [
@@ -25,9 +28,9 @@ const NAV_SECTIONS = [
     icon: BookOpen,
     collapsible: true,
     items: [
-      { icon: ScrollText, label: 'Rasgos', id: 'traits' },
-      { icon: Backpack, label: 'Equipamiento', id: 'equipment' },
-      { icon: Dices, label: 'Dados', id: 'dice' },
+      { icon: SmilePlus, label: 'Rasgos', id: 'traits' },
+      { icon: Sword, label: 'Equipamiento', id: 'equipment' },
+      { icon: Dice6, label: 'Dados', id: 'dice' },
       { icon: Dices, label: 'Dice Box', id: 'dicebox' },
     ]
   },

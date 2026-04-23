@@ -161,6 +161,7 @@ class CharacterCreate(BaseModel):
     equipment: Optional[str] = None
     features_traits: Optional[str] = None
     backstory: Optional[str] = None
+    image_url: Optional[str] = None
 
     class Config:
         populate_by_name = True
@@ -178,6 +179,7 @@ class CharacterResponse(BaseModel):
     stats: Dict[str, int]
     hp_max: int
     hp_current: int
+    image_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -200,6 +202,7 @@ class CharacterUpdate(BaseModel):
     proficiency_bonus: Optional[int] = None
     stats: Optional[StatsModel] = None
     is_alive: Optional[bool] = None
+    image_url: Optional[str] = None
 
     class Config:
         populate_by_name = True

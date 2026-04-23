@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { ChevronUp, ChevronDown, Save, Backpack, Skull, AlertCircle } from 'lucide-react'
+import { ChevronUp, ChevronDown, Save, Backpack, Skull, AlertCircle, Image as ImageIcon } from 'lucide-react'
 import { characterAPI } from '../services/api'
 import { useDnd5eAPI } from '../hooks/useDnd5eAPI'
 import EquipmentModal from './EquipmentModal'
+import ImageCustomizer from './ImageCustomizer'
 
 /**
  * Panel integrado para inspeccionar y editar personaje
@@ -22,9 +23,11 @@ export default function CharacterDetail({ character, campaignId, onUpdate, isGM 
   const [showHistory, setShowHistory] = useState(false)
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [activeTab, setActiveTab] = useState('main')
+  const [characterImageUrl, setCharacterImageUrl] = useState(character.image_url || null)
 
   useEffect(() => {
     setEditedCharacter(character)
+    setCharacterImageUrl(character.image_url || null)
   }, [character.id])
 
   useEffect(() => {
@@ -158,11 +161,16 @@ export default function CharacterDetail({ character, campaignId, onUpdate, isGM 
         speed: editedCharacter.speed,
       }
 
+      // Incluir imagen si ha sido modificada
+      if (characterImageUrl !== editedCharacter.image_url) {
+        updateData.image_url = characterImageUrl
+      }
+
       await characterAPI.update(character.id, updateData)
       setSuccess('✅ Personaje actualizado')
 
       setTimeout(() => {
-        onUpdate?.(editedCharacter)
+        onUpdate?.({ ...editedCharacter, image_url: characterImageUrl })
       }, 1000)
     } catch (e) {
       console.error('Error updating character:', e)
@@ -231,7 +239,7 @@ export default function CharacterDetail({ character, campaignId, onUpdate, isGM 
         overflowX: 'auto',
         flexShrink: 0,
       }}>
-        {['main', 'stats', 'notes'].map(tab => (
+        {['main', 'stats', 'image', 'notes'].map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -248,7 +256,7 @@ export default function CharacterDetail({ character, campaignId, onUpdate, isGM 
               fontSize: '0.85rem',
             }}
           >
-            {tab === 'main' ? 'Principal' : tab === 'stats' ? 'Características' : 'Apuntes'}
+            {tab === 'main' ? 'Principal' : tab === 'stats' ? 'Características' : tab === 'image' ? '🖼️ Imagen' : 'Apuntes'}
           </button>
         ))}
       </div>
@@ -665,6 +673,20 @@ export default function CharacterDetail({ character, campaignId, onUpdate, isGM 
                 placeholder="Los defectos del personaje..."
               />
             </div>
+          </div>
+        )}
+
+        {activeTab === 'image' && (
+          <div>
+            <ImageCustomizer
+              currentImageUrl={characterImageUrl}
+              onImageUpdate={(imageUrl) => {
+                setCharacterImageUrl(imageUrl)
+              }}
+              onImageRemove={() => {
+                setCharacterImageUrl(null)
+              }}
+            />
           </div>
         )}
       </div>
