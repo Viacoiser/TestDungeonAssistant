@@ -93,6 +93,30 @@ npm run dev
 - Sincronizacion en tiempo real (Socket.io)
 - PWA con offline support
 
-## Estado
+##  Estado del Proyecto (Kanban & Roadmap)
 
-Construccion en progreso - Fase 1: Setup base
+###  Fase 2: Autenticación, Campañas y Roles - [PROGRESO: 85%]
+- [x] **T-04**: Welcome Page interactiva (Login/Registro).
+- [x] **T-05**: Creación de Campañas (Nombre y Lore).
+- [x] **T-06**: Listado de campañas del usuario.
+- [x] **T-10**: Vista detalle de campaña con gestión GM.
+- [ ] ~~**T-08/09**: Cambio y transferencia de rol (GM/Player via Socket.io)~~ -> **[PENDIENTE: Requiere implementación de WebSockets]**
+
+###  Fase 3: Hoja de Personaje & Sesiones en Tiempo Real - [PROGRESO: 40%]
+*Enfoque: Gestión de NPCs terminada (Módulo complementario).*
+
+- [x] **T-12 (NPCs)**: Visualización de hoja con stats en grid y secciones colapsables (Secreto colapsable).
+- [x] **T-13/14 (NPCs)**: Edición de personaje e inventario dinámico.
+- [x] **Generador IA (Extras)**: Tirada de rasgos aleatorios integrada con Gemini.
+- [x] **Resumen automático**: Gemini genera un resumen tras cerrar sesión que actualiza el `lore_summary` de la campaña.
+- [ ] **Hoja oficial D&D 5e**: Formulario con validación total contra *dnd5eapi.co* -> **[PENDIENTE: Fase 3 Base]**
+- [ ] **Sincronización en tiempo real**: Notificación de inicio de sesión y notas compartidas -> **[PENDIENTE: Requiere Socket.io]**
+
+###  Notas y Análisis de IA
+- [x] **T-15**: Registro de notas personales por sesión.
+- [x] **T-16**: Análisis automático vía Gemini (Detección de NPCs e ítems mágicos).
+
+---
+
+> [!NOTE]
+> **Nota de Desarrollo:** Las funcionalidades marcadas con ~~tachado~~ o como pendientes estructurales de la Fase 2 y 3 requieren la integración de una capa de mensajería en tiempo real (**Socket.io**). Actualmente, el sistema opera bajo un modelo de consulta directa a Base de Datos (Supabase).
