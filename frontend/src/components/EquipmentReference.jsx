@@ -341,26 +341,33 @@ export default function EquipmentReference() {
                 }}>
                   Daño
                 </h3>
-                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--fantasy-gold)' }}>
+                <p style={{ margin: '0 0 0.5rem 0', fontSize: '1.2rem', fontWeight: 700, color: 'var(--fantasy-gold)' }}>
                   {selectedItem.damage}
-                </div>
+                </p>
               </div>
             )}
 
             {/* Descripción genérica */}
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem', color: 'rgba(226,209,166,0.65)', fontSize: '0.95rem' }}>
-              <p>
+              <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Descripción:</p>
+              <p style={{ margin: '0 0 0.5rem 0' }}>
                 Este es un {selectedItem.type} de rareza {selectedItem.rarity || 'desconocida'} en D&D 5e.
               </p>
               {selectedItem.damage && (
-                <p>
-                  Causa {selectedItem.damage} de daño cuando se usa en combate.
-                </p>
+                <>
+                  <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Daño en combate:</p>
+                  <p style={{ margin: '0 0 0.5rem 0' }}>
+                    Causa {selectedItem.damage} de daño cuando se usa en combate.
+                  </p>
+                </>
               )}
               {selectedItem.category && (
-                <p>
-                  Categoría: {selectedItem.category}.
-                </p>
+                <>
+                  <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Categoría:</p>
+                  <p style={{ margin: '0 0 0.5rem 0' }}>
+                    {selectedItem.category}.
+                  </p>
+                </>
               )}
             </div>
 

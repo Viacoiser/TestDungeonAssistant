@@ -3,9 +3,6 @@ import { Search, BookOpen, X } from 'lucide-react'
 import traitsData from '../data/dnd-traits.json'
 
 const detailPanelStyle = {
-  position: 'sticky',
-  top: 0,
-  right: 'auto',
   width: '100%',
   maxWidth: '380px',
   height: 'fit-content',
@@ -24,8 +21,11 @@ const detailPanelStyle = {
 
 const rightColumnStyle = {
   width: '380px',
+  position: 'sticky',
+  top: 0,
   alignSelf: 'flex-start',
   flexShrink: 0,
+  height: 'fit-content',
 }
 
 export default function TraitsReference() {
@@ -54,7 +54,7 @@ export default function TraitsReference() {
 
     setLoadingCategory(true)
     try {
-      const response = await fetch(`https://www.dnd5eapi.co/api/${category}`)
+      const response = await fetch(`https://www.dnd5eapi.co/api/2014/${category}`)
       if (response.ok) {
         const data = await response.json()
         setCategoryData(data.results || [])
@@ -81,8 +81,11 @@ export default function TraitsReference() {
     setTraitDetails(null)
 
     try {
-      // Intentar obtener desde la API de D&D 5e
-      const response = await fetch(`https://www.dnd5eapi.co/api/traits/${trait.index}`)
+      // Determinar el endpoint basado en la categoría seleccionada
+      const category = selectedCategory === 'all' ? 'traits' : selectedCategory
+      const apiUrl = `https://www.dnd5eapi.co/api/2014/${category}/${trait.index}`
+
+      const response = await fetch(apiUrl)
       if (response.ok) {
         const data = await response.json()
         setTraitDetails(data)
@@ -393,45 +396,216 @@ export default function TraitsReference() {
             }}>
               No se pudieron cargar los detalles de este rasgo. Verifica tu conexión.
             </div>
-          ) : traitDetails ? (
+                     ) : traitDetails ? (
             <>
-              {/* Descripción */}
-              <div>
-                <h3 style={{
-                  fontFamily: 'Almendra, serif',
-                  fontSize: '1.2rem',
-                  fontWeight: 700,
-                  color: 'rgba(226,209,166,0.9)',
-                  margin: '0 0 0.75rem 0',
-                }}>
-                  Descripción
-                </h3>
-                <div style={{ color: 'rgba(226,209,166,0.75)', lineHeight: 1.6 }}>
-                  {traitDetails.desc && traitDetails.desc.length > 0 ? (
-                    traitDetails.desc.map((paragraph, idx) => (
+              {/* Descripción - maneja diferentes formatos de la API */}
+              {traitDetails && (
+                <div>
+                  <h4 style={{
+                    fontFamily: 'Almendra, serif',
+                    fontSize: '1rem',
+                    fontWeight: 700,
+                    color: 'rgba(226,209,166,0.9)',
+                    margin: '0 0 0.75rem 0',
+                  }}>
+                    Información
+                  </h4>
+                  <div style={{ color: 'rgba(226,209,166,0.75)', lineHeight: 1.6, fontSize: '0.9rem' }}>
+                    {/* Descripción general */}
+                    {traitDetails.desc && traitDetails.desc.length > 0 && traitDetails.desc.map((paragraph, idx) => (
                       <p key={idx} style={{ margin: '0.5rem 0' }}>{paragraph}</p>
-                    ))
-                  ) : (
-                    <p style={{ color: 'rgba(226,209,166,0.5)' }}>Sin descripción disponible</p>
-                  )}
-                </div>
-              </div>
+                    ))}
 
-              {/* Información adicional si existe */}
-              {traitDetails.ability_scores && (
+                    {/* Para Razas: edad, alineamiento, tamaño, idiomas */}
+                    {traitDetails.age && (
+                      <>
+                        <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Edad:</p>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>{traitDetails.age}</p>
+                      </>
+                    )}
+                    {traitDetails.alignment && (
+                      <>
+                        <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Alineamiento:</p>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>{traitDetails.alignment}</p>
+                      </>
+                    )}
+                    {traitDetails.size_description && (
+                      <>
+                        <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Tamaño:</p>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>{traitDetails.size_description}</p>
+                      </>
+                    )}
+                    {traitDetails.language_desc && (
+                      <>
+                        <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Idiomas:</p>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>{traitDetails.language_desc}</p>
+                      </>
+                    )}
+
+                    {/* Para Clases: hit die, saving throws */}
+                    {traitDetails.hit_die && (
+                      <>
+                        <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Dado de Golpe:</p>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>d{traitDetails.hit_die}</p>
+                      </>
+                    )}
+                    {traitDetails.saving_throws && (
+                      <>
+                        <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Tiradas de Salvación:</p>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>{traitDetails.saving_throws.map(st => st.name).join(', ')}</p>
+                      </>
+                    )}
+
+                    {/* Para Features y Feats */}
+                    {traitDetails.prerequisites && traitDetails.prerequisites.length > 0 && (
+                      <>
+                        <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Prerrequisitos:</p>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>{traitDetails.prerequisites.map(p => p.name || JSON.stringify(p)).join(', ')}</p>
+                      </>
+                    )}
+                    {traitDetails.ability_score && (
+                      <>
+                        <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Aumento de Puntuación de Habilidad:</p>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>+{traitDetails.ability_score.increase} {traitDetails.ability_score.name}</p>
+                      </>
+                    )}
+                    {traitDetails.talent && (
+                      <>
+                        <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Talento:</p>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>{traitDetails.talent.name}</p>
+                      </>
+                    )}
+
+                    {/* Para Backgrounds */}
+                    {traitDetails.feature && (
+                      <>
+                        <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Característica:</p>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>{traitDetails.feature.name}</p>
+                      </>
+                    )}
+
+                    {/* Para Proficiencies */}
+                    {traitDetails.type && (
+                      <>
+                        <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Tipo:</p>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>{traitDetails.type}</p>
+                      </>
+                    )}
+                    {traitDetails.classes && traitDetails.classes.length > 0 && (
+                      <>
+                        <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Clases:</p>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>{traitDetails.classes.map(c => c.name).join(', ')}</p>
+                      </>
+                    )}
+                    {traitDetails.races && traitDetails.races.length > 0 && (
+                      <>
+                        <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Razas:</p>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>{traitDetails.races.map(r => r.name).join(', ')}</p>
+                      </>
+                    )}
+
+                    {/* Para Features y Feats */}
+                    {traitDetails.prerequisites && traitDetails.prerequisites.length > 0 && (
+                      <>
+                        <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Rasgos de Personalidad:</p>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>{traitDetails.personality_traits.length} opciones disponibles</p>
+                      </>
+                    )}
+                    {traitDetails.ideals && (
+                      <>
+                        <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Ideales:</p>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>{traitDetails.ideals.length} opciones disponibles</p>
+                      </>
+                    )}
+                    {traitDetails.bonds && (
+                      <>
+                        <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Vínculos:</p>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>{traitDetails.bonds.length} opciones disponibles</p>
+                      </>
+                    )}
+                    {traitDetails.flaws && (
+                      <>
+                        <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Defectos:</p>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>{traitDetails.flaws.length} opciones disponibles</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Proficiencias - maneja starting_proficiencies para razas y proficiencies para clases */}
+              {(traitDetails.proficiencies || traitDetails.starting_proficiencies) && (
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
-                  <h3 style={{
+                  <h4 style={{
                     fontFamily: 'Almendra, serif',
                     fontSize: '1rem',
                     fontWeight: 700,
                     color: 'rgba(226,209,166,0.9)',
                     margin: '0 0 0.5rem 0',
                   }}>
-                    Bonificación de Habilidades
-                  </h3>
+                    Proficiencias
+                  </h4>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    {(traitDetails.proficiencies || traitDetails.starting_proficiencies).map((prof, idx) => (
+                      <span key={idx} style={{
+                        background: 'rgba(217,83,30,0.15)',
+                        border: '1px solid rgba(217,83,30,0.3)',
+                        borderRadius: 6,
+                        padding: '0.3rem 0.6rem',
+                        fontSize: '0.8rem',
+                        color: 'rgba(226,209,166,0.8)',
+                      }}>
+                        {prof.name || prof.item?.name || prof}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Bonificaciones de habilidad */}
+              {traitDetails.ability_bonuses && traitDetails.ability_bonuses.length > 0 && (
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
+                  <h4 style={{
+                    fontFamily: 'Almendra, serif',
+                    fontSize: '1rem',
+                    fontWeight: 700,
+                    color: 'rgba(226,209,166,0.9)',
+                    margin: '0 0 0.5rem 0',
+                  }}>
+                    Bonificaciones de Habilidad
+                  </h4>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.9rem', color: 'rgba(226,209,166,0.7)' }}>
-                    {Object.entries(traitDetails.ability_scores).map(([ability, value]) => (
-                      <div key={ability}>+{value} {ability}</div>
+                    {traitDetails.ability_bonuses.map((bonus, idx) => (
+                      <div key={idx}>+{bonus.bonus} {bonus.ability_score?.name || bonus.ability_score?.index || 'N/A'}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Traits (para razas) */}
+              {traitDetails.traits && traitDetails.traits.length > 0 && (
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
+                  <h4 style={{
+                    fontFamily: 'Almendra, serif',
+                    fontSize: '1rem',
+                    fontWeight: 700,
+                    color: 'rgba(226,209,166,0.9)',
+                    margin: '0 0 0.5rem 0',
+                  }}>
+                    Rasgos
+                  </h4>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    {traitDetails.traits.map((trait, idx) => (
+                      <span key={idx} style={{
+                        background: 'rgba(226,209,166,0.1)',
+                        border: '1px solid rgba(226,209,166,0.2)',
+                        borderRadius: 6,
+                        padding: '0.3rem 0.6rem',
+                        fontSize: '0.8rem',
+                        color: 'rgba(226,209,166,0.8)',
+                      }}>
+                        {trait.name || trait}
+                      </span>
                     ))}
                   </div>
                 </div>
@@ -445,7 +619,7 @@ export default function TraitsReference() {
                 fontSize: '0.75rem',
                 color: 'rgba(226,209,166,0.3)',
               }}>
-                Fuente: D&D 5e API
+                Fuente: D&D 5e API - {selectedCategory === 'all' ? 'traits' : selectedCategory}
               </div>
             </>
           ) : null}
