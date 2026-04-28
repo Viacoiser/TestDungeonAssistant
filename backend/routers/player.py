@@ -56,34 +56,84 @@ async def create_character(
         # Preparar datos para Supabase
         character_data = {
             "id": character_id,
-            "campaign_id": data.campaign_id,  # Puede ser None (personaje independiente)
+            "campaign_id": data.campaign_id,
             "player_id": current_user["id"],
+
+            # ── Identificación ───────────────────────────────────────────────────
             "name": data.name,
             "race": data.race,
-            "class": data.class_,  # Mapear class_ a class para la BD
+            "class": data.class_,
             "level": data.level,
             "background": data.background or "",
             "alignment": data.alignment or "",
-            "stats": data.stats.dict() if hasattr(data.stats, 'dict') else data.stats,
+            "experience_points": data.experience_points,
+            "player_name": data.player_name or "",
+
+            # ── Stats base ───────────────────────────────────────────────────────
+            "stats": data.stats.dict() if hasattr(data.stats, "dict") else data.stats,
+
+            # ── Combate ──────────────────────────────────────────────────────────
             "hp_max": data.hp_max,
             "hp_current": data.hp_current,
-            "armor_class": data.armor_class or 10,
-            "initiative": data.initiative or 0,
-            "speed": data.speed or 30,
-            "proficiency_bonus": data.proficiency_bonus or 2,
-            "hit_dice": data.hit_dice or "1d8",
-            "passive_perception": data.passive_perception or 10,
-            "personality_traits": data.personality_traits or "",
-            "ideals": data.ideals or "",
-            "bonds": data.bonds or "",
-            "flaws": data.flaws or "",
-            "other_proficiencies": data.other_proficiencies or "",
-            "equipment": data.equipment or "",
-            "features_traits": data.features_traits or "",
-            "backstory": data.backstory or "",
+            "hp_temporary": data.hp_temporary,
+            "armor_class": data.armor_class,
+            "initiative": data.initiative,
+            "speed": data.speed,
+            "proficiency_bonus": data.proficiency_bonus,
+            "hit_dice": data.hit_dice,
+            "hit_dice_used": data.hit_dice_used,
+            "passive_perception": data.passive_perception,
+            "inspiration": data.inspiration,
+
+            # ── Tiradas de salvación y habilidades ───────────────────────────────
+            "saving_throws": data.saving_throws,
+            "skills": data.skills,
+
+            # ── Death saves ──────────────────────────────────────────────────────
+            "death_saves": data.death_saves,
+
+            # ── Ataques ──────────────────────────────────────────────────────────
+            "attacks": data.attacks,
+
+            # ── Equipo e inventario ──────────────────────────────────────────────
+            "equipment": data.equipment,
+            "currency": data.currency,
+            "treasure": data.treasure or "",
+
+            # ── Spellcasting ─────────────────────────────────────────────────────
+            "spellcasting": data.spellcasting,
+
+            # ── Personalidad ─────────────────────────────────────────────────────
+            "personality_traits": data.personality_traits,
+            "ideals": data.ideals,
+            "bonds": data.bonds,
+            "flaws": data.flaws,
+
+            # ── Rasgos ───────────────────────────────────────────────────────────
+            "features_traits": data.features_traits,
+            "other_proficiencies": data.other_proficiencies,
+            "additional_features": data.additional_features,
+
+            # ── Trasfondo ────────────────────────────────────────────────────────
+            "backstory": data.backstory,
+            "allies_organizations": data.allies_organizations,
+
+            # ── Apariencia ───────────────────────────────────────────────────────
+            "age": data.age or "",
+            "height": data.height or "",
+            "weight": data.weight or "",
+            "eyes": data.eyes or "",
+            "skin": data.skin or "",
+            "hair": data.hair or "",
+            "appearance": data.appearance or "",
+
+            # ── Imagen / estado ──────────────────────────────────────────────────
+            "image_url": data.image_url,
+            "is_alive": True,
             "created_at": datetime.utcnow().isoformat(),
             "updated_at": datetime.utcnow().isoformat(),
         }
+
         
         # Insertar en Supabase
         try:

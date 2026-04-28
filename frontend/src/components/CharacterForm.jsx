@@ -3,42 +3,124 @@ import { useDndData } from '../hooks/useDndData'
 import { useDnd5eAPI } from '../hooks/useDnd5eAPI'
 import { Save, AlertCircle, Plus, Trash2, Search, Upload, X } from 'lucide-react'
 import { commonItems } from '../services/equipmentService'
+import {
+  getProficiencyBonus,
+} from '../utils/normalizeCharacter'
+
+// ── Helpers de defaults JSONB ──────────────────────────────────────────────────
+
+function makeSavingThrows() {
+  return Object.fromEntries(
+    ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma']
+      .map(s => [s, { proficient: false }])
+  )
+}
+
+function makeSkills() {
+  return Object.fromEntries(
+    [
+      'acrobatics', 'animal_handling', 'arcana', 'athletics',
+      'deception', 'history', 'insight', 'intimidation',
+      'investigation', 'medicine', 'nature', 'perception',
+      'performance', 'persuasion', 'religion', 'sleight_of_hand',
+      'stealth', 'survival',
+    ].map(s => [s, { proficient: false, expertise: false }])
+  )
+}
+
+function makeAttacks() {
+  return Array(3).fill(null).map(() => ({
+    name: '', attack_bonus: '+0', damage: '', damage_type: '',
+  }))
+}
+
+function makeSpellcasting() {
+  return {
+    class: '', ability: '', save_dc: 0, attack_bonus: 0,
+    slots: Object.fromEntries(
+      Array.from({ length: 9 }, (_, i) => [String(i + 1), { total: 0, used: 0 }])
+    ),
+    cantrips: [], spells: [],
+  }
+}
 
 export default function CharacterForm({ campaignId, onSubmit, loading }) {
   const { races, classes, backgrounds, alignments } = useDndData()
   const { calculateBaseStats, calculateMaxHP } = useDnd5eAPI()
 
   const [formData, setFormData] = useState({
+    // ── Identificación ─────────────────────────────────────────────────────────
     name: '',
     race: '',
     class_: '',
     level: 1,
     background: '',
     alignment: '',
+    experience_points: 0,
+    player_name: '',
+
+    // ── Stats ──────────────────────────────────────────────────────────────────
     stats: {
-      strength: 10,
-      dexterity: 10,
-      constitution: 10,
-      intelligence: 10,
-      wisdom: 10,
-      charisma: 10,
+      strength: 10, dexterity: 10, constitution: 10,
+      intelligence: 10, wisdom: 10, charisma: 10,
     },
+
+    // ── Combate ────────────────────────────────────────────────────────────────
     hp_max: 10,
     hp_current: 10,
+    hp_temporary: 0,
     armor_class: 10,
     initiative: 0,
     speed: 30,
     proficiency_bonus: 2,
     hit_dice: '1d8',
+    hit_dice_used: 0,
     passive_perception: 10,
+    inspiration: false,
+
+    // ── Tiradas de salvación y habilidades ─────────────────────────────────────
+    saving_throws: makeSavingThrows(),
+    skills: makeSkills(),
+
+    // ── Death saves ────────────────────────────────────────────────────────────
+    death_saves: { successes: 0, failures: 0 },
+
+    // ── Ataques ────────────────────────────────────────────────────────────────
+    attacks: makeAttacks(),
+
+    // ── Equipo e inventario ────────────────────────────────────────────────────
+    equipment: '',
+    currency: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
+    treasure: '',
+
+    // ── Spellcasting ───────────────────────────────────────────────────────────
+    spellcasting: makeSpellcasting(),
+
+    // ── Personalidad ───────────────────────────────────────────────────────────
     personality_traits: '',
     ideals: '',
     bonds: '',
     flaws: '',
-    other_proficiencies: '',
-    equipment: '',
+
+    // ── Rasgos y características ────────────────────────────────────────────────
     features_traits: '',
+    other_proficiencies: '',
+    additional_features: '',
+
+    // ── Trasfondo ──────────────────────────────────────────────────────────────
     backstory: '',
+    allies_organizations: { text: '', symbol: '' },
+
+    // ── Apariencia física ──────────────────────────────────────────────────────
+    age: '',
+    height: '',
+    weight: '',
+    eyes: '',
+    skin: '',
+    hair: '',
+    appearance: '',
+
+    // ── Imagen ────────────────────────────────────────────────────────────────
     image_url: null,
   })
 
@@ -68,7 +150,7 @@ export default function CharacterForm({ campaignId, onSubmit, loading }) {
         updated.stats = baseStats
       }
 
-      // Si cambió la clase o el nivel, recalcular HP
+      // Si cambió la clase o el nivel, recalcular HP y prof bonus
       if ((name === 'class_' || name === 'level') && updated.class_) {
         const className = name === 'class_' ? value : updated.class_
         const level = name === 'level' ? parsedValue : updated.level
@@ -77,6 +159,8 @@ export default function CharacterForm({ campaignId, onSubmit, loading }) {
         const maxHP = calculateMaxHP(className, level, constitution)
         updated.hp_max = maxHP
         updated.hp_current = maxHP
+        updated.proficiency_bonus = getProficiencyBonus(level)
+        updated.hit_dice_used = 0
       }
 
       return updated
@@ -166,37 +250,81 @@ export default function CharacterForm({ campaignId, onSubmit, loading }) {
     e.preventDefault()
     
     if (validateForm()) {
-      // Preparar datos para enviar al backend
+      // Preparar datos para enviar al backend — todos los campos del contrato
       const submitData = {
-        campaign_id: formData.campaign_id,
-        name: formData.name,
-        race: formData.race,
-        class: formData.class_, // Renombrar class_ a class
-        level: formData.level,
-        background: formData.background,
-        alignment: formData.alignment,
+        // ── Identificación ────────────────────────────────────────────────────
+        campaign_id:       campaignId || formData.campaign_id,
+        name:              formData.name,
+        class:             formData.class_,   // BD usa "class", no "class_"
+        race:              formData.race,
+        level:             formData.level,
+        background:        formData.background,
+        alignment:         formData.alignment,
+        experience_points: formData.experience_points,
+        player_name:       formData.player_name,
+
+        // ── Stats ─────────────────────────────────────────────────────────────
         stats: formData.stats,
-        hp_max: formData.hp_max,
-        hp_current: formData.hp_current,
-        armor_class: formData.armor_class,
-        initiative: formData.initiative,
-        speed: formData.speed,
+
+        // ── Combate ───────────────────────────────────────────────────────────
+        hp_max:            formData.hp_max,
+        hp_current:        formData.hp_current,
+        hp_temporary:      formData.hp_temporary,
+        armor_class:       formData.armor_class,
+        initiative:        formData.initiative,
+        speed:             formData.speed,
         proficiency_bonus: formData.proficiency_bonus,
-        hit_dice: formData.hit_dice,
-        passive_perception: formData.passive_perception,
+        hit_dice:          formData.hit_dice,
+        hit_dice_used:     formData.hit_dice_used,
+        passive_perception:formData.passive_perception,
+        inspiration:       formData.inspiration,
+
+        // ── JSONB estructurados ────────────────────────────────────────────────
+        saving_throws:     formData.saving_throws,
+        skills:            formData.skills,
+        death_saves:       formData.death_saves,
+        attacks:           formData.attacks,
+        spellcasting:      formData.spellcasting,
+        currency:          formData.currency,
+        allies_organizations: formData.allies_organizations,
+
+        // ── Equipo ────────────────────────────────────────────────────────────
+        // Si seleccionó ítems del picker, serializarlos; si no, el texto del campo
+        equipment: startingEquipment.length > 0
+          ? JSON.stringify(startingEquipment)
+          : formData.equipment,
+        treasure: formData.treasure,
+
+        // ── Personalidad ──────────────────────────────────────────────────────
         personality_traits: formData.personality_traits,
-        ideals: formData.ideals,
-        bonds: formData.bonds,
-        flaws: formData.flaws,
+        ideals:             formData.ideals,
+        bonds:              formData.bonds,
+        flaws:              formData.flaws,
+
+        // ── Rasgos ────────────────────────────────────────────────────────────
+        features_traits:     formData.features_traits,
         other_proficiencies: formData.other_proficiencies,
-        equipment: JSON.stringify(startingEquipment),
-        features_traits: formData.features_traits,
+        additional_features: formData.additional_features,
+
+        // ── Trasfondo ─────────────────────────────────────────────────────────
         backstory: formData.backstory,
+
+        // ── Apariencia ────────────────────────────────────────────────────────
+        age:        formData.age,
+        height:     formData.height,
+        weight:     formData.weight,
+        eyes:       formData.eyes,
+        skin:       formData.skin,
+        hair:       formData.hair,
+        appearance: formData.appearance,
+
+        // ── Imagen ────────────────────────────────────────────────────────────
         image_url: formData.image_url,
       }
       onSubmit(submitData)
     }
   }
+
 
   const handleAddEquipment = (item) => {
     const newItem = {
@@ -284,9 +412,9 @@ export default function CharacterForm({ campaignId, onSubmit, loading }) {
                 errors.race ? 'border-red-500' : 'border-gray-600'
               }`}
             >
-              <option value="">Seleccionar raza...</option>
+              <option value="" style={{ background: '#1a1a1a', color: '#fff' }}>Seleccionar raza...</option>
               {races.map((race) => (
-                <option key={race.index} value={race.index}>
+                <option key={race.index} value={race.index} style={{ background: '#1a1a1a', color: '#fff' }}>
                   {race.name}
                 </option>
               ))}
@@ -307,9 +435,9 @@ export default function CharacterForm({ campaignId, onSubmit, loading }) {
                 errors.class_ ? 'border-red-500' : 'border-gray-600'
               }`}
             >
-              <option value="">Seleccionar clase...</option>
+              <option value="" style={{ background: '#1a1a1a', color: '#fff' }}>Seleccionar clase...</option>
               {classes.map((cls) => (
-                <option key={cls.index} value={cls.index}>
+                <option key={cls.index} value={cls.index} style={{ background: '#1a1a1a', color: '#fff' }}>
                   {cls.name}
                 </option>
               ))}
@@ -328,9 +456,9 @@ export default function CharacterForm({ campaignId, onSubmit, loading }) {
               onChange={handleChange}
               className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-600"
             >
-              <option value="">Seleccionar trasfondo...</option>
+              <option value="" style={{ background: '#1a1a1a', color: '#fff' }}>Seleccionar trasfondo...</option>
               {backgrounds.map((bg) => (
-                <option key={bg.index} value={bg.index}>
+                <option key={bg.index} value={bg.index} style={{ background: '#1a1a1a', color: '#fff' }}>
                   {bg.name}
                 </option>
               ))}
@@ -348,9 +476,9 @@ export default function CharacterForm({ campaignId, onSubmit, loading }) {
               onChange={handleChange}
               className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-600"
             >
-              <option value="">Seleccionar alineación...</option>
+              <option value="" style={{ background: '#1a1a1a', color: '#fff' }}>Seleccionar alineación...</option>
               {alignments.map((align) => (
-                <option key={align.index} value={align.index}>
+                <option key={align.index} value={align.index} style={{ background: '#1a1a1a', color: '#fff' }}>
                   {align.name}
                 </option>
               ))}

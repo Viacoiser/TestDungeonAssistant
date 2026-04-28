@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
-import { Search, BookOpen, X } from 'lucide-react'
-import traitsData from '../data/dnd-traits.json'
+import React, { useState, useEffect, useRef } from 'react'
+import { Search, Info, RefreshCw, CheckCircle, Loader2, BookOpen, X } from 'lucide-react'
+import useEncyclopediaStore from '../store/useEncyclopediaStore'
+import SyncEncyclopedia from './SyncEncyclopedia'
 
 const detailPanelStyle = {
   width: '100%',
@@ -34,60 +35,121 @@ export default function TraitsReference() {
   const [selectedTrait, setSelectedTrait] = useState(null)
   const [traitDetails, setTraitDetails] = useState(null)
   const [loadingDetails, setLoadingDetails] = useState(false)
-  const [categoryData, setCategoryData] = useState(traitsData.results)
+  const [categoryData, setCategoryData] = useState([])
   const [loadingCategory, setLoadingCategory] = useState(false)
 
   // Categorías disponibles
   const categories = ['all', 'races', 'classes', 'features', 'traits', 'feats', 'backgrounds', 'proficiencies']
 
-  // Cargar datos por categoría
-  const handleCategoryChange = async (category) => {
+  const handleCategoryChange = (category) => {
     setSelectedCategory(category)
     setSelectedTrait(null)
     setTraitDetails(null)
     setSearchQuery('')
+    // Búsqueda instantánea al cambiar de categoría
+    searchTraits('', category)
+  }
 
-    if (category === 'all') {
-      setCategoryData(traitsData.results)
+  // Obtener métodos del store de cache
+  const { setSearchCache, getSearchCached, setDetailsCache, getDetailsCached } = useEncyclopediaStore()
+
+  const abortControllerRef = React.useRef(null)
+
+  // Función auxiliar de búsqueda
+  const searchTraits = async (query, category) => {
+    // Cancelar petición anterior si existe
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    abortControllerRef.current = new AbortController()
+
+    // 1. Verificar cache primero
+    const cachedResults = getSearchCached(category, query)
+    if (cachedResults) {
+      setCategoryData(cachedResults)
       return
     }
 
     setLoadingCategory(true)
     try {
-      const response = await fetch(`https://www.dnd5eapi.co/api/2014/${category}`)
+      const traitCategories = ['races', 'classes', 'features', 'traits', 'feats', 'backgrounds', 'proficiencies']
+      const catParam = category === 'all' 
+        ? `&categories=${traitCategories.join(',')}` 
+        : `&categories=${category}`
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/dnd5e/search?q=${query}${catParam}&limit=50`,
+        { signal: abortControllerRef.current.signal }
+      )
       if (response.ok) {
         const data = await response.json()
-        setCategoryData(data.results || [])
-      } else {
-        setCategoryData([])
+        const results = data.results.map(r => ({ 
+          ...r.data, 
+          index: r.index,      // Usar el índice de la DB
+          category: r.category // Usar la categoría de la DB
+        })) || []
+        
+        // 2. Guardar en cache
+        setSearchCache(category, query, results)
+        setCategoryData(results)
       }
     } catch (err) {
-      console.error(`Error loading ${category}:`, err)
-      setCategoryData([])
+      if (err.name === 'AbortError') return
+      console.error('Error searching traits:', err)
     } finally {
       setLoadingCategory(false)
     }
   }
 
-  // Filtrar rasgos por búsqueda
+  // Filtrar rasgos por búsqueda (Frontend side filter for responsiveness)
   const filteredTraits = categoryData.filter(trait =>
     trait.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  // Carga inicial
+  useEffect(() => {
+    searchTraits('', 'all')
+    return () => {
+      if (abortControllerRef.current) abortControllerRef.current.abort()
+    }
+  }, [])
+
+  // Efecto solo para la búsqueda por texto (con debounce)
+  useEffect(() => {
+    if (searchQuery === '') return // Evitamos disparar si está vacío porque handleCategoryChange ya lo hizo
+
+    const delayDebounceFn = setTimeout(() => {
+      if (searchQuery.length >= 3) {
+        searchTraits(searchQuery, selectedCategory)
+      }
+    }, 500)
+    return () => clearTimeout(delayDebounceFn)
+  }, [searchQuery])
+
   // Cargar detalles del rasgo
   const handleSelectTrait = async (trait) => {
     setSelectedTrait(trait)
+    
+    // 1. Verificar cache primero
+    const category = trait.category || selectedCategory
+    const cachedDetails = getDetailsCached(category, trait.index)
+    if (cachedDetails) {
+      setTraitDetails(cachedDetails)
+      return
+    }
+
     setLoadingDetails(true)
     setTraitDetails(null)
 
     try {
-      // Determinar el endpoint basado en la categoría seleccionada
-      const category = selectedCategory === 'all' ? 'traits' : selectedCategory
-      const apiUrl = `https://www.dnd5eapi.co/api/2014/${category}/${trait.index}`
+      // Usar nuestro endpoint de detalle local
+      const apiUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/dnd5e/detail/${category}/${trait.index}`
 
       const response = await fetch(apiUrl)
       if (response.ok) {
         const data = await response.json()
+        
+        // 2. Guardar en cache
+        setDetailsCache(category, trait.index, data)
         setTraitDetails(data)
       } else {
         setTraitDetails({ error: true })
@@ -132,21 +194,33 @@ export default function TraitsReference() {
       {/* Lista de Rasgos - Lado Izquierdo */}
       <div className="traits-list active" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0 }}>
         {/* Header */}
-        <div style={{ animation: 'fadeInUp 0.4s ease forwards' }}>
-          <h2 style={{
-            fontFamily: 'Almendra, serif',
-            fontSize: '2.5rem',
-            fontWeight: 700,
-            color: 'var(--fantasy-gold)',
-            margin: 0,
-            marginBottom: '0.5rem',
-            textShadow: '0 0 30px rgba(217,83,30,0.2)',
-          }}>
-            Rasgos & Características
-          </h2>
-          <p style={{ color: 'rgba(226,209,166,0.55)', fontSize: '0.95rem', margin: 0 }}>
-            Consulta las pasivas y características especiales de D&D 5e
-          </p>
+        <div style={{ 
+          animation: 'fadeInUp 0.4s ease forwards', 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'flex-start' 
+        }}>
+          <div>
+            <h2 style={{
+              fontFamily: 'Almendra, serif',
+              fontSize: '2.5rem',
+              fontWeight: 700,
+              color: 'var(--fantasy-gold)',
+              margin: 0,
+              marginBottom: '0.5rem',
+              textShadow: '0 0 30px rgba(217,83,30,0.2)',
+            }}>
+              Rasgos & Características
+            </h2>
+            <p style={{ color: 'rgba(226,209,166,0.55)', fontSize: '0.95rem', margin: 0 }}>
+              Consulta las pasivas y características especiales de D&D 5e
+            </p>
+          </div>
+          <SyncEncyclopedia 
+            category={selectedCategory === 'all' ? null : selectedCategory} 
+            categories={selectedCategory === 'all' ? ['races', 'classes', 'features', 'traits', 'feats', 'backgrounds', 'proficiencies'] : null}
+            onComplete={() => searchTraits(searchQuery, selectedCategory)}
+          />
         </div>
 
         {/* Buscador */}
@@ -456,13 +530,6 @@ export default function TraitsReference() {
                       </>
                     )}
 
-                    {/* Para Features y Feats */}
-                    {traitDetails.prerequisites && traitDetails.prerequisites.length > 0 && (
-                      <>
-                        <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Prerrequisitos:</p>
-                        <p style={{ margin: '0 0 0.5rem 0' }}>{traitDetails.prerequisites.map(p => p.name || JSON.stringify(p)).join(', ')}</p>
-                      </>
-                    )}
                     {traitDetails.ability_score && (
                       <>
                         <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Aumento de Puntuación de Habilidad:</p>
@@ -504,29 +571,55 @@ export default function TraitsReference() {
                       </>
                     )}
 
-                    {/* Para Features y Feats */}
+                    {/* Para Feats: Prerrequisitos */}
                     {traitDetails.prerequisites && traitDetails.prerequisites.length > 0 && (
                       <>
+                        <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Prerrequisitos:</p>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>
+                          {traitDetails.prerequisites.map(p => {
+                            if (typeof p === 'string') return p;
+                            if (p.ability_score && p.minimum_score) {
+                              const scoreName = typeof p.ability_score === 'object' ? p.ability_score.name : p.ability_score;
+                              return `${scoreName} ${p.minimum_score}`;
+                            }
+                            if (p.feature) return p.feature;
+                            return JSON.stringify(p);
+                          }).join(', ')}
+                        </p>
+                      </>
+                    )}
+
+                    {/* Para Backgrounds: Rasgos, Ideales, Vínculos, Defectos */}
+                    {traitDetails.personality_traits && (
+                      <>
                         <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Rasgos de Personalidad:</p>
-                        <p style={{ margin: '0 0 0.5rem 0' }}>{traitDetails.personality_traits.length} opciones disponibles</p>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>
+                          {(traitDetails.personality_traits.from?.options?.length || traitDetails.personality_traits.length || 0)} opciones disponibles
+                        </p>
                       </>
                     )}
                     {traitDetails.ideals && (
                       <>
                         <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Ideales:</p>
-                        <p style={{ margin: '0 0 0.5rem 0' }}>{traitDetails.ideals.length} opciones disponibles</p>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>
+                          {(traitDetails.ideals.from?.options?.length || traitDetails.ideals.length || 0)} opciones disponibles
+                        </p>
                       </>
                     )}
                     {traitDetails.bonds && (
                       <>
                         <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Vínculos:</p>
-                        <p style={{ margin: '0 0 0.5rem 0' }}>{traitDetails.bonds.length} opciones disponibles</p>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>
+                          {(traitDetails.bonds.from?.options?.length || traitDetails.bonds.length || 0)} opciones disponibles
+                        </p>
                       </>
                     )}
                     {traitDetails.flaws && (
                       <>
                         <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Defectos:</p>
-                        <p style={{ margin: '0 0 0.5rem 0' }}>{traitDetails.flaws.length} opciones disponibles</p>
+                        <p style={{ margin: '0 0 0.5rem 0' }}>
+                          {(traitDetails.flaws.from?.options?.length || traitDetails.flaws.length || 0)} opciones disponibles
+                        </p>
                       </>
                     )}
                   </div>

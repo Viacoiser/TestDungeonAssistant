@@ -15,6 +15,8 @@ import EquipmentReference from '../components/EquipmentReference'
 import MonstersReference from '../components/MonstersReference'
 import SpellsReference from '../components/SpellsReference'
 import SettingsPanel from '../components/SettingsPanel'
+import useEncyclopediaStore from '../store/useEncyclopediaStore'
+import SyncEncyclopedia from '../components/SyncEncyclopedia'
 
 const labelStyle = {
   display: 'block',
@@ -27,7 +29,7 @@ const labelStyle = {
 
 const inputStyle = {
   width: '100%',
-  background: 'rgba(255,255,255,0.05)',
+  background: '#1a1a1a', // Solid background to prevent white-on-white issues in dropdowns
   border: '1px solid rgba(255,255,255,0.1)',
   borderRadius: 10,
   padding: '0.7rem 1rem',
@@ -123,6 +125,20 @@ export default function Dashboard() {
     loadCampaigns()
     loadCharacters()
   }, [])
+
+  // Prefetch de la enciclopedia en segundo plano
+  const { prefetchCategory } = useEncyclopediaStore()
+  useEffect(() => {
+    // Precargamos las categorías más ligeras y usadas
+    const categoriesToPrefetch = ['traits', 'races', 'classes', 'equipment']
+    
+    // Lo hacemos con un pequeño delay para no afectar la carga inicial del dashboard
+    const timer = setTimeout(() => {
+      categoriesToPrefetch.forEach(cat => prefetchCategory(cat))
+    }, 2000)
+
+    return () => clearTimeout(timer)
+  }, [prefetchCategory])
 
   const handleLogout = () => {
     localStorage.removeItem('auth_token')

@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react'
-import { Search, Sparkles, X } from 'lucide-react'
-import spellsData from '../data/dnd-spells.json'
+import React, { useMemo, useState, useEffect } from 'react'
+import { Search, Sparkles, X, Info, RefreshCw, CheckCircle, Loader2, BookOpen } from 'lucide-react'
+import useEncyclopediaStore from '../store/useEncyclopediaStore'
+import SyncEncyclopedia from './SyncEncyclopedia'
 
 const detailPanelStyle = {
   position: 'sticky',
@@ -32,15 +33,98 @@ export default function SpellsReference() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedLevel, setSelectedLevel] = useState('all')
   const [selectedSpell, setSelectedSpell] = useState(null)
+  const [spellDetails, setSpellDetails] = useState(null)
+  const [loadingDetails, setLoadingDetails] = useState(false)
+  const [categoryData, setCategoryData] = useState([])
+  const [loadingCategory, setLoadingCategory] = useState(false)
 
   const levels = useMemo(() => ['all', 'cantrip', '1', '2', '3', '4', '5', '6', '7', '8', '9'], [])
 
-  const filteredSpells = spellsData.results.filter((spell) => {
-    const matchesSearch = spell.name.toLowerCase().includes(searchQuery.toLowerCase())
-    const normalizedLevel = spell.level === 0 ? 'cantrip' : String(spell.level)
-    const matchesLevel = selectedLevel === 'all' || normalizedLevel === selectedLevel
-    return matchesSearch && matchesLevel
-  })
+  // Obtener store
+  const { setSearchCache, getSearchCached, setDetailsCache, getDetailsCached } = useEncyclopediaStore()
+
+  // Función de búsqueda en el backend
+  const searchSpells = async (query, level) => {
+    // 1. Verificar cache
+    const cached = getSearchCached('spells', `${level}:${query}`)
+    if (cached) {
+      setCategoryData(cached)
+      return
+    }
+
+    setLoadingCategory(true)
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/dnd5e/search?q=${query}&categories=spells&limit=50`)
+      if (response.ok) {
+        const data = await response.json()
+        let results = data.results.map(r => ({ 
+          ...r.data, 
+          index: r.index, 
+          category: r.category 
+        }))
+        
+        // Filtrar por nivel si no es 'all'
+        if (level !== 'all') {
+          results = results.filter(spell => {
+            const spellLevel = spell.level === 0 ? 'cantrip' : String(spell.level)
+            return spellLevel === level
+          })
+        }
+        
+        // 2. Guardar en cache
+        setSearchCache('spells', `${level}:${query}`, results)
+        setCategoryData(results)
+      }
+    } catch (err) {
+      console.error('Error searching spells:', err)
+    } finally {
+      setLoadingCategory(false)
+    }
+  }
+
+  // Cargar detalles
+  const handleSelectSpell = async (spell) => {
+    setSelectedSpell(spell)
+    
+    // 1. Verificar cache
+    const cachedDetails = getDetailsCached('spells', spell.index)
+    if (cachedDetails) {
+      setSpellDetails(cachedDetails)
+      return
+    }
+
+    setLoadingDetails(true)
+    setSpellDetails(null)
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/dnd5e/detail/spells/${spell.index}`)
+      if (response.ok) {
+        const data = await response.json()
+        
+        // 2. Guardar en cache
+        setDetailsCache('spells', spell.index, data)
+        setSpellDetails(data)
+      }
+    } catch (err) {
+      console.error('Error loading spell details:', err)
+    } finally {
+      setLoadingDetails(false)
+    }
+  }
+
+  // Efecto solo para la búsqueda por texto (con debounce)
+  useEffect(() => {
+    if (searchQuery === '') return
+
+    const delayDebounceFn = setTimeout(() => {
+      if (searchQuery.length >= 3) {
+        searchSpells(searchQuery, selectedLevel)
+      }
+    }, 500)
+    return () => clearTimeout(delayDebounceFn)
+  }, [searchQuery])
+
+  const filteredSpells = categoryData
 
   return (
     <>
@@ -72,21 +156,33 @@ export default function SpellsReference() {
       alignItems: 'start',
     }}>
       <div className="spells-list active" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0 }}>
-        <div style={{ animation: 'fadeInUp 0.4s ease forwards' }}>
-          <h2 style={{
-            fontFamily: 'Almendra, serif',
-            fontSize: '2.5rem',
-            fontWeight: 700,
-            color: 'var(--fantasy-gold)',
-            margin: 0,
-            marginBottom: '0.5rem',
-            textShadow: '0 0 30px rgba(217,83,30,0.2)',
-          }}>
-            Spells
-          </h2>
-          <p style={{ color: 'rgba(226,209,166,0.55)', fontSize: '0.95rem', margin: 0 }}>
-            Biblioteca de hechizos centrada en consulta de descripción y datos clave.
-          </p>
+        {/* Header */}
+        <div style={{ 
+          animation: 'fadeInUp 0.4s ease forwards', 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'flex-start' 
+        }}>
+          <div>
+            <h2 style={{
+              fontFamily: 'Almendra, serif',
+              fontSize: '2.5rem',
+              fontWeight: 700,
+              color: 'var(--fantasy-gold)',
+              margin: 0,
+              marginBottom: '0.5rem',
+              textShadow: '0 0 30px rgba(217,83,30,0.2)',
+            }}>
+              Hechizos & Magia
+            </h2>
+            <p style={{ color: 'rgba(226,209,166,0.55)', fontSize: '0.95rem', margin: 0 }}>
+              Conjuros y rituales arcanos de D&D 5e
+            </p>
+          </div>
+          <SyncEncyclopedia 
+            category="spells" 
+            onComplete={() => searchSpells(searchQuery, selectedLevel)}
+          />
         </div>
 
         <div style={{ position: 'relative' }}>
@@ -141,7 +237,11 @@ export default function SpellsReference() {
           {levels.map((level) => (
             <button
               key={level}
-              onClick={() => setSelectedLevel(level)}
+              onClick={() => {
+                setSelectedLevel(level)
+                setSearchQuery('')
+                searchSpells('', level)
+              }}
               style={{
                 fontFamily: 'Almendra, serif',
                 padding: '0.5rem 1rem',
@@ -170,13 +270,13 @@ export default function SpellsReference() {
           {filteredSpells.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '2rem', color: 'rgba(226,209,166,0.4)' }}>
               <Sparkles size={32} style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
-              <p>No se encontraron hechizos para "{searchQuery}"</p>
+              <p>No se encontraron hechizos</p>
             </div>
           ) : (
             filteredSpells.map((spell) => (
               <button
                 key={spell.index}
-                onClick={() => setSelectedSpell(spell)}
+                onClick={() => handleSelectSpell(spell)}
                 style={{
                   background: selectedSpell?.index === spell.index ? 'rgba(217,83,30,0.15)' : 'rgba(255,255,255,0.03)',
                   border: selectedSpell?.index === spell.index ? '2px solid rgba(217,83,30,0.5)' : '1px solid rgba(255,255,255,0.08)',
@@ -197,7 +297,7 @@ export default function SpellsReference() {
                   {spell.name}
                 </h3>
                 <p style={{ fontSize: '0.8rem', color: 'rgba(226,209,166,0.5)', margin: 0 }}>
-                  Nivel {spell.level === 0 ? 'Cantrip' : spell.level} · {spell.school}
+                  Nivel {spell.level === 0 ? 'Cantrip' : spell.level}
                 </p>
               </button>
             ))
@@ -212,7 +312,7 @@ export default function SpellsReference() {
           fontSize: '0.8rem',
           color: 'rgba(226,209,166,0.3)',
         }}>
-          Total: {filteredSpells.length} de {spellsData.count} hechizos
+          Total: {filteredSpells.length} hechizos encontrados
         </div>
       </div>
 
@@ -230,7 +330,10 @@ export default function SpellsReference() {
               {selectedSpell.name}
             </h2>
             <button
-              onClick={() => setSelectedSpell(null)}
+              onClick={() => {
+                setSelectedSpell(null)
+                setSpellDetails(null)
+              }}
               style={{
                 background: 'none',
                 border: 'none',
@@ -245,45 +348,53 @@ export default function SpellsReference() {
             </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            <div style={metaBoxStyle}>
-              <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(226,209,166,0.35)', marginBottom: 4 }}>Nivel</div>
-              <div style={{ color: 'var(--fantasy-gold)', fontWeight: 700 }}>{selectedSpell.level === 0 ? 'Cantrip' : selectedSpell.level}</div>
-            </div>
-            <div style={metaBoxStyle}>
-              <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(226,209,166,0.35)', marginBottom: 4 }}>Escuela</div>
-              <div style={{ color: 'var(--fantasy-gold)', fontWeight: 700 }}>{selectedSpell.school}</div>
-            </div>
-            <div style={metaBoxStyle}>
-              <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(226,209,166,0.35)', marginBottom: 4 }}>Tiempo</div>
-              <div style={{ color: 'var(--fantasy-gold)', fontWeight: 700 }}>{selectedSpell.casting_time}</div>
-            </div>
-            <div style={metaBoxStyle}>
-              <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(226,209,166,0.35)', marginBottom: 4 }}>Alcance</div>
-              <div style={{ color: 'var(--fantasy-gold)', fontWeight: 700 }}>{selectedSpell.range}</div>
-            </div>
-            <div style={{ ...metaBoxStyle, gridColumn: '1 / -1' }}>
-              <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(226,209,166,0.35)', marginBottom: 4 }}>Duración</div>
-              <div style={{ color: 'var(--fantasy-gold)', fontWeight: 700 }}>{selectedSpell.duration}</div>
-            </div>
-          </div>
+          {loadingDetails ? (
+            <div style={{ textAlign: 'center', padding: '2rem' }}>Cargando...</div>
+          ) : spellDetails ? (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div style={metaBoxStyle}>
+                  <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(226,209,166,0.35)', marginBottom: 4 }}>Nivel</div>
+                  <div style={{ color: 'var(--fantasy-gold)', fontWeight: 700 }}>{spellDetails.level === 0 ? 'Cantrip' : spellDetails.level}</div>
+                </div>
+                <div style={metaBoxStyle}>
+                  <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(226,209,166,0.35)', marginBottom: 4 }}>Escuela</div>
+                  <div style={{ color: 'var(--fantasy-gold)', fontWeight: 700 }}>{spellDetails.school?.name}</div>
+                </div>
+                <div style={metaBoxStyle}>
+                  <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(226,209,166,0.35)', marginBottom: 4 }}>Tiempo</div>
+                  <div style={{ color: 'var(--fantasy-gold)', fontWeight: 700 }}>{spellDetails.casting_time}</div>
+                </div>
+                <div style={metaBoxStyle}>
+                  <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(226,209,166,0.35)', marginBottom: 4 }}>Alcance</div>
+                  <div style={{ color: 'var(--fantasy-gold)', fontWeight: 700 }}>{spellDetails.range}</div>
+                </div>
+              </div>
 
-          <div>
-            <h3 style={{
-              fontFamily: 'Almendra, serif',
-              fontSize: '1.2rem',
-              fontWeight: 700,
-              color: 'rgba(226,209,166,0.9)',
-              margin: '0 0 0.75rem 0',
-            }}>
-              Descripción
-            </h3>
-            <div style={{ color: 'rgba(226,209,166,0.75)', lineHeight: 1.6 }}>
-              {selectedSpell.desc.map((paragraph, idx) => (
-                <p key={idx} style={{ margin: '0.5rem 0' }}>{paragraph}</p>
-              ))}
-            </div>
-          </div>
+              <div>
+                <h3 style={{
+                  fontFamily: 'Almendra, serif',
+                  fontSize: '1.2rem',
+                  fontWeight: 700,
+                  color: 'rgba(226,209,166,0.9)',
+                  margin: '1rem 0 0.75rem 0',
+                }}>
+                  Descripción
+                </h3>
+                <div style={{ color: 'rgba(226,209,166,0.75)', lineHeight: 1.6 }}>
+                  {spellDetails.desc?.map((paragraph, idx) => (
+                    <p key={idx} style={{ margin: '0.5rem 0', fontSize: '0.9rem' }}>{paragraph}</p>
+                  ))}
+                  {spellDetails.higher_level && spellDetails.higher_level.length > 0 && (
+                    <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'rgba(217,83,30,0.1)', borderRadius: 8 }}>
+                      <strong style={{ color: 'var(--fantasy-gold)', fontSize: '0.8rem' }}>A niveles superiores:</strong>
+                      <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem' }}>{spellDetails.higher_level[0]}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : null}
           </div>
         ) : (
           <div style={{

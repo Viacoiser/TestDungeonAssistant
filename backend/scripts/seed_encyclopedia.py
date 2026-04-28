@@ -18,7 +18,7 @@ import httpx
 from dotenv import load_dotenv
 from supabase import Client, create_client
 
-BASE_API_URL = "https://www.dnd5eapi.co/api"
+BASE_API_URL = "https://www.dnd5eapi.co/api/2014"
 DEFAULT_CATEGORIES = [
     "traits",
     "equipment",
@@ -67,7 +67,12 @@ async def seed_category(
 ) -> tuple[int, int]:
     list_url = f"{BASE_API_URL}/{category}"
     payload = await fetch_json(http_client, list_url)
-    results = payload.get("results", [])
+    
+    # Manejo especial para subcategorías de equipo (ej: equipment-categories/weapon)
+    if "equipment-categories" in category:
+        results = payload.get("equipment", [])
+    else:
+        results = payload.get("results", [])
 
     if limit is not None:
         results = results[:limit]
@@ -90,9 +95,12 @@ async def seed_category(
             print(f"[WARN] {category}/{item_index}: fallo detalle ({exc})")
             continue
 
+        # Normalizar categoría para la DB
+        db_category = "equipment" if "equipment-categories" in category else category
+
         upsert_rows.append(
             {
-                "category": category,
+                "category": db_category,
                 "index": item_index,
                 "name": item_name,
                 "data": detail,
@@ -129,7 +137,7 @@ async def run_seed(categories: list[str], version: str, language: str, limit: in
     total_inserted = 0
     total_failed = 0
 
-    async with httpx.AsyncClient() as http_client:
+    async with httpx.AsyncClient(follow_redirects=True) as http_client:
         for category in categories:
             print(f"\n[START] {category}")
             try:

@@ -147,7 +147,7 @@ export default function SettingsPanel({ characters = [], onCharacterUpdated }) {
           style={{
             width: '100%',
             maxWidth: 400,
-            background: 'rgba(255,255,255,0.05)',
+            background: '#1a1612', // Color sólido para evitar problemas en el dropdown
             border: '1px solid rgba(255,255,255,0.1)',
             borderRadius: 10,
             padding: '0.7rem 1rem',
@@ -156,12 +156,21 @@ export default function SettingsPanel({ characters = [], onCharacterUpdated }) {
             outline: 'none',
             cursor: 'pointer',
             transition: 'border-color 0.2s',
+            appearance: 'none', // Quita el estilo nativo para mayor control
+            backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'right 1rem center',
+            backgroundSize: '1em',
           }}
           onFocus={e => e.target.style.borderColor = 'rgba(217,83,30,0.6)'}
           onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
         >
           {characters.map(char => (
-            <option key={char.id} value={char.id}>
+            <option 
+              key={char.id} 
+              value={char.id}
+              style={{ background: '#1a1612', color: '#fff' }}
+            >
               {char.name} - Nivel {char.level} {char.class} ({char.race})
             </option>
           ))}
