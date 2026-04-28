@@ -301,7 +301,7 @@ export default function Dashboard() {
   )
 
   return (
-    <div style={{ height: '100vh', overflow: 'hidden', display: 'flex', background: 'var(--fantasy-bg)', fontFamily: 'Inter, sans-serif', flexDirection: 'column' }}>
+    <div style={{ height: '100vh', display: 'flex', background: 'var(--fantasy-bg)', fontFamily: 'Inter, sans-serif', flexDirection: 'column', overflow: 'hidden' }}>
       {/* ── Desktop Sidebar (hidden on mobile) ── */}
       <div className="hidden md:block md:fixed md:left-0 md:top-0 md:w-64 md:h-screen md:z-40">
         <Sidebar
@@ -319,7 +319,7 @@ export default function Dashboard() {
       </div>
 
       {/* Main content - responsive */}
-      <div className="md:ml-64 flex-1 flex flex-col">
+      <div className="md:ml-64 flex-1 flex flex-col min-h-0 overflow-hidden">
         {selectedCampaign ? (
           <CampaignDetail
             campaign={selectedCampaign}
@@ -334,8 +334,8 @@ export default function Dashboard() {
             error={createCharacterError}
           />
         ) : (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'row', overflow: 'hidden', position: 'relative' }}>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowX: 'hidden', overflowY: 'hidden', position: 'relative' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0, position: 'relative' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, position: 'relative' }}>
 
               {/* Background image overlay */}
               <div style={{ position: 'absolute', inset: 0, zIndex: 0, opacity: 0.08, pointerEvents: 'none' }}>
@@ -544,7 +544,7 @@ export default function Dashboard() {
 
                     ) : (
                       /* Campaign grid */
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(200px, 50vw, 300px), 1fr))', gap: '1rem md:gap-1.5rem' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(200px, 50vw, 300px), 1fr))', gap: '1.5rem' }}>
                         {filteredCampaigns.map((campaign, idx) => (
                           <CampaignCard
                             key={campaign.id}

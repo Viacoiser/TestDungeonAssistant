@@ -245,12 +245,27 @@ export default function SpellsReference() {
             </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
-            <div style={metaBoxStyle}>Nivel: {selectedSpell.level === 0 ? 'Cantrip' : selectedSpell.level}</div>
-            <div style={metaBoxStyle}>Escuela: {selectedSpell.school}</div>
-            <div style={metaBoxStyle}>Tiempo: {selectedSpell.casting_time}</div>
-            <div style={metaBoxStyle}>Alcance: {selectedSpell.range}</div>
-            <div style={{ ...metaBoxStyle, gridColumn: '1 / -1' }}>Duración: {selectedSpell.duration}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div style={metaBoxStyle}>
+              <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(226,209,166,0.35)', marginBottom: 4 }}>Nivel</div>
+              <div style={{ color: 'var(--fantasy-gold)', fontWeight: 700 }}>{selectedSpell.level === 0 ? 'Cantrip' : selectedSpell.level}</div>
+            </div>
+            <div style={metaBoxStyle}>
+              <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(226,209,166,0.35)', marginBottom: 4 }}>Escuela</div>
+              <div style={{ color: 'var(--fantasy-gold)', fontWeight: 700 }}>{selectedSpell.school}</div>
+            </div>
+            <div style={metaBoxStyle}>
+              <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(226,209,166,0.35)', marginBottom: 4 }}>Tiempo</div>
+              <div style={{ color: 'var(--fantasy-gold)', fontWeight: 700 }}>{selectedSpell.casting_time}</div>
+            </div>
+            <div style={metaBoxStyle}>
+              <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(226,209,166,0.35)', marginBottom: 4 }}>Alcance</div>
+              <div style={{ color: 'var(--fantasy-gold)', fontWeight: 700 }}>{selectedSpell.range}</div>
+            </div>
+            <div style={{ ...metaBoxStyle, gridColumn: '1 / -1' }}>
+              <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(226,209,166,0.35)', marginBottom: 4 }}>Duración</div>
+              <div style={{ color: 'var(--fantasy-gold)', fontWeight: 700 }}>{selectedSpell.duration}</div>
+            </div>
           </div>
 
           <div>

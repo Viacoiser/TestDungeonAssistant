@@ -351,10 +351,22 @@ export default function MonstersReference() {
               Resistencias y Vulnerabilidades
             </h3>
             <div style={{ display: 'grid', gap: '0.65rem' }}>
-              <div><strong>Vulnerabilidades:</strong> {formatList(selectedMonster.damage_vulnerabilities)}</div>
-              <div><strong>Resistencias:</strong> {formatList(selectedMonster.damage_resistances)}</div>
-              <div><strong>Inmunidades al daño:</strong> {formatList(selectedMonster.damage_immunities)}</div>
-              <div><strong>Inmunidades a estados:</strong> {formatList(selectedMonster.condition_immunities)}</div>
+              <div>
+                <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Vulnerabilidades:</p>
+                <p style={{ margin: '0 0 0.5rem 0' }}>{formatList(selectedMonster.damage_vulnerabilities)}</p>
+              </div>
+              <div>
+                <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Resistencias:</p>
+                <p style={{ margin: '0 0 0.5rem 0' }}>{formatList(selectedMonster.damage_resistances)}</p>
+              </div>
+              <div>
+                <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Inmunidades al daño:</p>
+                <p style={{ margin: '0 0 0.5rem 0' }}>{formatList(selectedMonster.damage_immunities)}</p>
+              </div>
+              <div>
+                <p style={{ margin: '0.5rem 0', fontWeight: 700, color: 'rgba(226,209,166,0.9)' }}>Inmunidades a estados:</p>
+                <p style={{ margin: '0 0 0.5rem 0' }}>{formatList(selectedMonster.condition_immunities)}</p>
+              </div>
             </div>
           </div>
           <div>
