@@ -1,0 +1,161 @@
+{
+  "count": 12,
+  "results": [
+    {
+      "index": "fire-bolt",
+      "name": "Fire Bolt",
+      "level": 0,
+      "school": "Evocation",
+      "casting_time": "1 action",
+      "range": "120 feet",
+      "duration": "Instantaneous",
+      "desc": [
+        "Disparas una chispa de fuego a una criatura u objeto.",
+        "Escala su daño con el nivel del lanzador."
+      ]
+    },
+    {
+      "index": "mage-hand",
+      "name": "Mage Hand",
+      "level": 0,
+      "school": "Conjuration",
+      "casting_time": "1 action",
+      "range": "30 feet",
+      "duration": "1 minute",
+      "desc": [
+        "Invocas una mano espectral para manipular objetos ligeros a distancia.",
+        "No puede atacar ni activar objetos mágicos complejos."
+      ]
+    },
+    {
+      "index": "magic-missile",
+      "name": "Magic Missile",
+      "level": 1,
+      "school": "Evocation",
+      "casting_time": "1 action",
+      "range": "120 feet",
+      "duration": "Instantaneous",
+      "desc": [
+        "Creas dardos de fuerza que impactan automáticamente.",
+        "Ideal para asegurar daño cuando la precisión es crítica."
+      ]
+    },
+    {
+      "index": "shield",
+      "name": "Shield",
+      "level": 1,
+      "school": "Abjuration",
+      "casting_time": "1 reaction",
+      "range": "Self",
+      "duration": "1 round",
+      "desc": [
+        "Barrera mágica instantánea que aumenta tu defensa temporalmente.",
+        "Puede anular proyectiles mágicos de bajo nivel."
+      ]
+    },
+    {
+      "index": "cure-wounds",
+      "name": "Cure Wounds",
+      "level": 1,
+      "school": "Evocation",
+      "casting_time": "1 action",
+      "range": "Touch",
+      "duration": "Instantaneous",
+      "desc": [
+        "Canalizas energía restauradora para sanar a un objetivo tocado.",
+        "Escala al gastar espacios de mayor nivel."
+      ]
+    },
+    {
+      "index": "invisibility",
+      "name": "Invisibility",
+      "level": 2,
+      "school": "Illusion",
+      "casting_time": "1 action",
+      "range": "Touch",
+      "duration": "Up to 1 hour",
+      "desc": [
+        "Vuelves invisible a una criatura hasta que ataque o lance un hechizo.",
+        "Herramienta clave para infiltración y escape."
+      ]
+    },
+    {
+      "index": "counterspell",
+      "name": "Counterspell",
+      "level": 3,
+      "school": "Abjuration",
+      "casting_time": "1 reaction",
+      "range": "60 feet",
+      "duration": "Instantaneous",
+      "desc": [
+        "Interrumpes el lanzamiento de un hechizo enemigo.",
+        "Es un recurso táctico de alto impacto en combates mágicos."
+      ]
+    },
+    {
+      "index": "fireball",
+      "name": "Fireball",
+      "level": 3,
+      "school": "Evocation",
+      "casting_time": "1 action",
+      "range": "150 feet",
+      "duration": "Instantaneous",
+      "desc": [
+        "Explosión de fuego en área amplia con daño elevado.",
+        "Requiere cuidado táctico por daño colateral."
+      ]
+    },
+    {
+      "index": "dimension-door",
+      "name": "Dimension Door",
+      "level": 4,
+      "school": "Conjuration",
+      "casting_time": "1 action",
+      "range": "500 feet",
+      "duration": "Instantaneous",
+      "desc": [
+        "Teletransporte de corto alcance con un aliado opcional.",
+        "Excelente para reposicionamiento y extracción."
+      ]
+    },
+    {
+      "index": "telekinesis",
+      "name": "Telekinesis",
+      "level": 5,
+      "school": "Transmutation",
+      "casting_time": "1 action",
+      "range": "60 feet",
+      "duration": "Up to 10 minutes",
+      "desc": [
+        "Manipulas criaturas u objetos con fuerza mental.",
+        "Permite control de campo sostenido por concentración."
+      ]
+    },
+    {
+      "index": "disintegrate",
+      "name": "Disintegrate",
+      "level": 6,
+      "school": "Transmutation",
+      "casting_time": "1 action",
+      "range": "60 feet",
+      "duration": "Instantaneous",
+      "desc": [
+        "Rayo de energía que inflige daño masivo a un solo objetivo.",
+        "Puede reducir materia orgánica a polvo si no resiste."
+      ]
+    },
+    {
+      "index": "meteor-swarm",
+      "name": "Meteor Swarm",
+      "level": 9,
+      "school": "Evocation",
+      "casting_time": "1 action",
+      "range": "1 mile",
+      "duration": "Instantaneous",
+      "desc": [
+        "Conjuras meteoros devastadores en múltiples puntos.",
+        "Uno de los hechizos ofensivos más destructivos de alto nivel."
+      ]
+    }
+  ]
+}
