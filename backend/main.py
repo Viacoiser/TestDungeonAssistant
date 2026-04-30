@@ -66,6 +66,7 @@ app.add_middleware(
         "http://127.0.0.1:5176",
         "http://127.0.0.1:5177",
         "http://127.0.0.1:3000",
+        "https://test-dungeon-assistant.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
