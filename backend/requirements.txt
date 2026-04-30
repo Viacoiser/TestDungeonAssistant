@@ -15,4 +15,5 @@ aiofiles
 fuzzywuzzy
 google-cloud-speech
 pydub
+pyaudioop
 gunicorn
