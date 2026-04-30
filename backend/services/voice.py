@@ -2,12 +2,19 @@ import logging
 from typing import Optional, Dict
 import os
 import io
-from pydub import AudioSegment
 
 logger = logging.getLogger("services.voice")
 
 # Detectar modo de prueba
 MOCK_MODE = os.getenv("VOICE_MOCK_MODE", "false").lower() == "true"
+
+# Intentar importar pydub para normalización de audio
+try:
+    from pydub import AudioSegment
+    PYDUB_AVAILABLE = True
+except ImportError:
+    PYDUB_AVAILABLE = False
+    logger.warning("⚠ pydub not available - audio normalization disabled")
 
 # Intentar importar Google Cloud, pero no fallar si no está disponible
 try:
@@ -181,7 +188,12 @@ class VoiceService:
         Convertir audio a formato estándar (LINEAR16, 16kHz)
 
         Soporta: WebM, MP3, OGG, WAV, FLAC
+        Si pydub no está disponible, retorna el audio sin cambios
         """
+
+        if not PYDUB_AVAILABLE:
+            logger.warning("⚠ pydub not available - returning raw audio without normalization")
+            return audio_bytes
 
         try:
             # Detectar formato automáticamente
