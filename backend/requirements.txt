@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+python-socketio
+python-multipart
+pydantic
+pydantic-settings
+email-validator
+httpx
+supabase
+python-jose[cryptography]
+passlib[bcrypt]
+python-dotenv
+google-generativeai
+aiofiles
+fuzzywuzzy
+google-cloud-speech
+gunicorn
