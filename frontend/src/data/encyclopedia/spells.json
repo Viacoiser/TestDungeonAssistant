@@ -1,0 +1,88 @@
+[
+  {
+    "id": "bola-de-fuego",
+    "name": "Bola de Fuego (Fireball)",
+    "level": 3,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "150 pies",
+    "components": "V, S, M (una bolita de guano de murciélago y azufre)",
+    "duration": "Instantáneo",
+    "desc": [
+      "Una luz brillante destella desde tu dedo apuntando hacia un punto que elijas dentro del alcance y luego florece con un rugido bajo en una explosión de llamas. Cada criatura en una esfera de 20 pies de radio centrada en ese punto debe hacer una tirada de salvación de Destreza. Un objetivo recibe 8d6 de daño de fuego si falla la salvación, o la mitad de daño si tiene éxito.",
+      "El fuego se propaga por las esquinas. Enciende los objetos inflamables en el área que no estén siendo vestidos o transportados."
+    ],
+    "higher_level": [
+      "Cuando lanzas este hechizo usando un espacio de hechizo de nivel 4 o superior, el daño aumenta en 1d6 por cada nivel de espacio por encima de 3."
+    ],
+    "damage": "8d6 fuego"
+  },
+  {
+    "id": "magic-missile",
+    "name": "Proyectil mágico / Magic Missile",
+    "level": 1,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "120 pies",
+    "components": "V, S",
+    "duration": "Instantáneo",
+    "desc": [
+      "Dispara dardos de energía que impactan automáticamente causando daño de fuerza."
+    ],
+    "damage": "1d4 + 1 fuerza (por dardo)"
+  },
+  {
+    "id": "fireball-2",
+    "name": "Bola de fuego / Fireball (Resumen)",
+    "level": 3,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "150 pies",
+    "components": "V, S, M",
+    "duration": "Instantáneo",
+    "desc": [
+      "Explosión de fuego en área que causa gran daño a múltiples enemigos."
+    ],
+    "damage": "8d6 fuego"
+  },
+  {
+    "id": "invisibility",
+    "name": "Invisibilidad / Invisibility",
+    "level": 2,
+    "school": "Ilusión",
+    "casting_time": "1 acción",
+    "range": "Toque",
+    "components": "V, S, M",
+    "duration": "Concentración, hasta 1 hora",
+    "desc": [
+      "Vuelve invisible a una criatura hasta que ataque o lance un conjuro."
+    ]
+  },
+  {
+    "id": "shield",
+    "name": "Escudo / Shield",
+    "level": 1,
+    "school": "Abjuración",
+    "casting_time": "1 reacción",
+    "range": "Personal",
+    "components": "V, S",
+    "duration": "1 ronda",
+    "desc": [
+      "Como reacción, otorga +5 a la CA hasta el siguiente turno y anula los proyectiles mágicos."
+    ]
+  },
+  {
+    "id": "cure-wounds",
+    "name": "Curar heridas / Cure Wounds",
+    "level": 1,
+    "school": "Evocación",
+    "casting_time": "1 acción",
+    "range": "Toque",
+    "components": "V, S",
+    "duration": "Instantáneo",
+    "desc": [
+      "Restaura puntos de golpe a una criatura tocada."
+    ],
+    "damage": "1d8 + modificador curación"
+  }
+]

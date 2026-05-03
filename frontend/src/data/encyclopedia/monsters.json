@@ -1,0 +1,138 @@
+[
+  {
+    "id": "goblin",
+    "name": "Goblin",
+    "type": "humanoide",
+    "size": "Pequeño",
+    "challenge_rating": "1/4",
+    "armor_class": "15 (Armadura de cuero, escudo)",
+    "hit_points": "7 (2d6)",
+    "hit_dice": "2d6",
+    "strength": 8,
+    "dexterity": 14,
+    "constitution": 10,
+    "intelligence": 10,
+    "wisdom": 8,
+    "charisma": 8,
+    "actions": [
+      {
+        "name": "Cimitarra",
+        "desc": "Ataque de Arma Cuerpo a Cuerpo: +4 a impactar, alcance 5 pies, un objetivo. Daño: 5 (1d6 + 2) cortante."
+      },
+      {
+        "name": "Arco Corto",
+        "desc": "Ataque de Arma a Distancia: +4 a impactar, alcance 80/320 pies, un objetivo. Daño: 5 (1d6 + 2) perforante."
+      }
+    ]
+  },
+  {
+    "id": "goblin-2",
+    "name": "Goblin (Resumen)",
+    "type": "humanoide",
+    "size": "Pequeño",
+    "challenge_rating": "1/4",
+    "armor_class": "15",
+    "hit_points": "7",
+    "hit_dice": "2d6",
+    "strength": 8,
+    "dexterity": 14,
+    "constitution": 10,
+    "intelligence": 10,
+    "wisdom": 8,
+    "charisma": 8,
+    "actions": [
+      {
+        "name": "Descripción",
+        "desc": "Criatura astuta y cobarde que combate en grupo. Puede esconderse o retirarse como acción adicional."
+      }
+    ]
+  },
+  {
+    "id": "orc",
+    "name": "Orco",
+    "type": "humanoide",
+    "size": "Mediano",
+    "challenge_rating": "1/2",
+    "armor_class": "13",
+    "hit_points": "15",
+    "hit_dice": "2d8 + 6",
+    "strength": 16,
+    "dexterity": 12,
+    "constitution": 16,
+    "intelligence": 7,
+    "wisdom": 11,
+    "charisma": 10,
+    "actions": [
+      {
+        "name": "Descripción",
+        "desc": "Guerrero brutal que puede avanzar rápidamente hacia sus enemigos gracias a su agresividad."
+      }
+    ]
+  },
+  {
+    "id": "skeleton",
+    "name": "Esqueleto / Skeleton",
+    "type": "muerto viviente",
+    "size": "Mediano",
+    "challenge_rating": "1/4",
+    "armor_class": "13",
+    "hit_points": "13",
+    "hit_dice": "2d8 + 4",
+    "strength": 10,
+    "dexterity": 14,
+    "constitution": 15,
+    "intelligence": 6,
+    "wisdom": 8,
+    "charisma": 5,
+    "actions": [
+      {
+        "name": "Descripción",
+        "desc": "Inmune al veneno, vulnerable al daño contundente. Usa armas simples como espada o arco."
+      }
+    ]
+  },
+  {
+    "id": "zombie",
+    "name": "Zombi / Zombie",
+    "type": "muerto viviente",
+    "size": "Mediano",
+    "challenge_rating": "1/4",
+    "armor_class": "8",
+    "hit_points": "22",
+    "hit_dice": "3d8 + 9",
+    "strength": 13,
+    "dexterity": 6,
+    "constitution": 16,
+    "intelligence": 3,
+    "wisdom": 6,
+    "charisma": 5,
+    "actions": [
+      {
+        "name": "Descripción",
+        "desc": "Lento pero resistente, puede evitar caer a 0 puntos de golpe gracias a su resistencia antinatural."
+      }
+    ]
+  },
+  {
+    "id": "mimic",
+    "name": "Mímico / Mimic",
+    "type": "monstruosidad",
+    "size": "Mediano",
+    "challenge_rating": "2",
+    "armor_class": "12",
+    "hit_points": "58",
+    "hit_dice": "9d8 + 18",
+    "strength": 17,
+    "dexterity": 12,
+    "constitution": 15,
+    "intelligence": 5,
+    "wisdom": 13,
+    "charisma": 8,
+    "actions": [
+      {
+        "name": "Descripción",
+        "desc": "Se disfraza de objeto común para emboscar a sus presas y atraparlas con su cuerpo adhesivo."
+      }
+    ]
+  }
+]

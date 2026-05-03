@@ -1,0 +1,58 @@
+[
+  {
+    "id": "darkvision",
+    "name": "Visión en la Oscuridad",
+    "category": "traits",
+    "desc": [
+      "Acostumbrado a la vida subterránea, tienes una visión superior en la oscuridad y luz tenue. Puedes ver en luz tenue dentro de 60 pies de ti como si fuera luz brillante, y en la oscuridad como si fuera luz tenue. No puedes discernir colores en la oscuridad, solo sombras de gris."
+    ],
+    "races": [
+      {
+        "name": "Elfo"
+      },
+      {
+        "name": "Enano"
+      }
+    ]
+  },
+  {
+    "id": "alert",
+    "name": "Alerta / Alert",
+    "category": "feats",
+    "desc": [
+      "El personaje no puede ser sorprendido mientras esté consciente, obtiene +5 a la iniciativa y las criaturas ocultas no tienen ventaja automática contra él."
+    ]
+  },
+  {
+    "id": "lucky",
+    "name": "Afortunado / Lucky",
+    "category": "feats",
+    "desc": [
+      "El personaje tiene 3 puntos de suerte por descanso largo que puede usar para repetir tiradas de ataque, pruebas o salvaciones, o influir en ataques contra él."
+    ]
+  },
+  {
+    "id": "mobile",
+    "name": "Móvil / Mobile",
+    "category": "feats",
+    "desc": [
+      "Aumenta la velocidad en 10 pies y evita ataques de oportunidad de criaturas a las que haya atacado en ese turno."
+    ]
+  },
+  {
+    "id": "healer",
+    "name": "Sanador / Healer",
+    "category": "feats",
+    "desc": [
+      "Permite usar un kit de sanador para estabilizar criaturas y curarlas con una acción una vez por descanso."
+    ]
+  },
+  {
+    "id": "great-weapon-master",
+    "name": "Maestro de armas grandes / Great Weapon Master",
+    "category": "feats",
+    "desc": [
+      "Permite hacer un ataque adicional tras crítico o matar un enemigo, y aceptar -5 al ataque para ganar +10 al daño."
+    ]
+  }
+]
