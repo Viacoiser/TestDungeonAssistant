@@ -106,18 +106,35 @@ export default function CampaignDetail({ campaign: initialCampaign, userRole, on
   }, [activeTab, initialCampaign?.id, isGM])
 
   return (
-    <div style={{
-      flex: 1,
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
-      overflow: 'hidden',
-      background: 'transparent',
-    }}>
+    <div className="flex-1 flex flex-col h-full bg-transparent overflow-hidden">
 
-      {/* ── Floating Sub-Tabs Bar (Modern & Centered) ── */}
-      <div className="flex-shrink-0 z-10 w-full px-4 py-4 flex justify-center">
-        <div className="relative flex items-center justify-center gap-2 p-1.5 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+      {/* ── Desktop Campaign Header & Tabs ── */}
+      <div className="flex-shrink-0 z-10 w-full px-6 lg:px-10 pt-6 pb-2 flex flex-col gap-5">
+        
+        {/* Campaign Header */}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-3 text-fantasy-gold/60 mb-2">
+            <button 
+              onClick={onBack}
+              className="flex items-center gap-1.5 hover:text-white transition-colors text-sm font-semibold tracking-wide"
+            >
+              <ChevronLeft size={16} />
+              <span>Volver al Dashboard</span>
+            </button>
+          </div>
+          <h1 className="text-3xl md:text-4xl font-serif font-bold text-white tracking-wide text-shadow-sm">
+            {campaign?.name}
+          </h1>
+          {playerName && (
+            <div className="text-sm text-fantasy-gold/80 font-medium">
+              Jugando como: <span className="text-fantasy-accent">{playerName}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Tabs Bar (Left-aligned, Scrollable) */}
+        <div className="w-full overflow-x-auto pb-2 custom-scrollbar">
+          <div className="inline-flex items-center gap-2 p-1.5 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.4)]">
           {tabs.map(({ id, label, Icon }) => {
             const active = activeTab === id
             return (
@@ -153,10 +170,11 @@ export default function CampaignDetail({ campaign: initialCampaign, userRole, on
             )
           })}
         </div>
+        </div>
       </div>
 
       {/* ── Tab Content ─────────────────────────────────────────────────── */}
-      <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+      <div className="flex-1 relative overflow-hidden mt-2">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -164,20 +182,10 @@ export default function CampaignDetail({ campaign: initialCampaign, userRole, on
             initial="initial"
             animate="animate"
             exit="exit"
-            style={{
-              position: 'absolute', inset: 0,
-              overflow: 'hidden',
-              display: 'flex', flexDirection: 'column',
-            }}
+            className="absolute inset-0 flex flex-col overflow-hidden"
           >
             {/* Inner scroll wrapper for each tab */}
-            <div style={{
-              flex: 1,
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              padding: '1.5rem 1.75rem',
-              height: '100%',
-            }}>
+            <div className="flex-1 overflow-y-auto overflow-x-hidden px-6 lg:px-10 pb-8 custom-scrollbar">
               {activeTab === 'notas' && <NotesTab campaignId={campaign?.id} />}
               {activeTab === 'personajes' && <CharactersTab campaignId={campaign?.id} isGM={isGM} user={user} onSelectCharacter={setViewingCharacter} />}
               {activeTab === 'dice' && (

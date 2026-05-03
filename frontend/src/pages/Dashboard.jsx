@@ -401,7 +401,7 @@ export default function Dashboard() {
               position: 'absolute', left: '50%', transform: 'translateX(-50%)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               width: '60%', pointerEvents: 'none', textAlign: 'center'
-            }}>
+            }} className="lg:hidden">
               <h2 style={{
                 fontFamily: 'Cinzel, serif', fontSize: '1.1rem', fontWeight: 700, color: '#fff', margin: 0,
                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
