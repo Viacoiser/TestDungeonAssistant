@@ -54,5 +54,365 @@
     "desc": [
       "Permite hacer un ataque adicional tras crítico o matar un enemigo, y aceptar -5 al ataque para ganar +10 al daño."
     ]
+  },
+  {
+    "id": "defensive-duelist",
+    "name": "Duelista defensivo / Defensive Duelist",
+    "category": "feats",
+    "desc": [
+      "Si el personaje empuña un arma sutil con la que es competente, puede usar su reacción para sumar su bonificador de competencia a su CA contra un ataque cuerpo a cuerpo, lo que potencialmente puede causar que el ataque falle."
+    ]
+  },
+  {
+    "id": "inspiring-leader",
+    "name": "Líder inspirador / Inspiring Leader",
+    "category": "feats",
+    "desc": [
+      "Prerrequisito: Carisma 13 o superior. Tras dar un discurso motivador (10 minutos), puedes otorgar puntos de golpe temporales a hasta 6 criaturas aliadas (incluyéndote) iguales a tu nivel + tu modificador de Carisma."
+    ]
+  },
+  {
+    "id": "elemental-adept",
+    "name": "Adepto elemental / Elemental Adept",
+    "category": "feats",
+    "desc": [
+      "Prerrequisito: Capacidad para lanzar al menos un conjuro. Elige un tipo de daño elemental (ácido, frío, fuego, rayo, trueno). Los conjuros que lances ignoran las resistencias a ese tipo de daño y cualquier resultado de 1 en los dados de daño de ese tipo se tratan como 2."
+    ]
+  },
+  {
+    "id": "sentinel",
+    "name": "Centinela / Sentinel",
+    "category": "feats",
+    "desc": [
+      "Cuando aciertas un ataque de oportunidad, la velocidad de la criatura se reduce a 0 por el resto del turno. Las criaturas provocan ataques de oportunidad incluso si se destraban (Disengage). Cuando una criatura cercana ataca a un objetivo que no seas tú, puedes usar tu reacción para hacer un ataque cuerpo a cuerpo contra ella."
+    ]
+  },
+  {
+    "id": "crossbow-expert",
+    "name": "Experto en ballestas / Crossbow Expert",
+    "category": "feats",
+    "desc": [
+      "Ignoras la propiedad de carga de las ballestas. Estar a 5 pies de un enemigo no te impone desventaja en las tiradas de ataque a distancia. Cuando atacas con un arma a una mano, puedes usar una acción adicional para atacar con una ballesta de mano que estés empuñando."
+    ]
+  },
+  {
+    "id": "resilient",
+    "name": "Resistente / Resilient",
+    "category": "feats",
+    "desc": [
+      "Elige una característica. Aumentas esa característica en +1 (hasta un máximo de 20) y obtienes competencia en las tiradas de salvación que usen esa característica."
+    ]
+  },
+  {
+    "id": "tough",
+    "name": "Duro / Tough",
+    "category": "feats",
+    "desc": [
+      "Tus puntos de golpe máximos aumentan en una cantidad igual al doble de tu nivel cuando obtienes esta dote. Cada vez que subas de nivel, tu máximo aumenta en 2 adicionales."
+    ]
+  },
+  {
+    "id": "observant",
+    "name": "Observador / Observant",
+    "category": "feats",
+    "desc": [
+      "Aumenta tu puntuación de Inteligencia o Sabiduría en 1 (máximo 20). Si puedes ver la boca de una criatura mientras habla un idioma que entiendes, puedes leer sus labios. Tienes un bonificador de +5 a tu Percepción (Sabiduría) e Investigación (Inteligencia) pasivas."
+    ]
+  },
+  {
+    "id": "actor",
+    "name": "Actor / Actor",
+    "category": "feats",
+    "desc": [
+      "Aumenta tu Carisma en 1 (máx 20). Tienes ventaja en Engaño y en Interpretación al tratar de hacerte pasar por otra persona. Puedes imitar el habla de otra persona o el sonido de una criatura tras escucharlo 1 minuto."
+    ]
+  },
+  {
+    "id": "martial-adept",
+    "name": "Adepto marcial / Martial Adept",
+    "category": "feats",
+    "desc": [
+      "Aprendes dos maniobras a tu elección de la lista del arquetipo Maestro de Batalla del guerrero. Obtienes un dado de superioridad (un d6) que usas para realizar las maniobras. Recuperas el dado tras un descanso corto o largo."
+    ]
+  },
+  {
+    "id": "war-caster",
+    "name": "Lanzador de conjuros de guerra / War Caster",
+    "category": "feats",
+    "desc": [
+      "Prerrequisito: Capacidad de lanzar al menos un conjuro. Otorga ventaja en salvaciones de Constitución para mantener concentración en conjuros. Permite realizar los componentes somáticos de los conjuros incluso si tienes armas o escudo en tus manos. Cuando el movimiento de una criatura hostil provoque que le hagas un ataque de oportunidad, puedes usar tu reacción para lanzarle un conjuro (que le apunte solo a ella) en lugar de un ataque de arma."
+    ]
+  },
+  {
+    "id": "spell-sniper",
+    "name": "Francotirador de conjuros / Spell Sniper",
+    "category": "feats",
+    "desc": [
+      "Prerrequisito: Capacidad de lanzar al menos un conjuro. Duplica el alcance de tus conjuros que requieran tirada de ataque. Tus ataques de conjuro a distancia ignoran la cobertura media y tres cuartos. Aprendes un truco que requiera una tirada de ataque."
+    ]
+  },
+  {
+    "id": "polearm-master",
+    "name": "Maestro de armas de asta / Polearm Master",
+    "category": "feats",
+    "desc": [
+      "Cuando tomas la acción de Ataque y atacas usando solo una guja, alabarda, bastón o lanza, puedes usar una acción adicional para dar un golpe cuerpo a cuerpo con el mango del arma (1d4 daño contundente). Mientras empuñes esas armas, las criaturas provocan ataques de oportunidad cuando ENTRAN en tu alcance."
+    ]
+  },
+  {
+    "id": "shield-master",
+    "name": "Experto en escudos / Shield Master",
+    "category": "feats",
+    "desc": [
+      "Si atacas, puedes usar acción adicional para intentar empujar una criatura 5 pies con el escudo. Si no estás incapacitado, puedes sumar la CA de tu escudo a salvaciones de Destreza de hechizos que solo te afecten a ti. Además, si debes hacer una salvación de DES para recibir mitad de daño, puedes usar tu reacción para recibir cero daño si tienes éxito."
+    ]
+  },
+  {
+    "id": "magic-initiate",
+    "name": "Iniciado en magia / Magic Initiate",
+    "category": "feats",
+    "desc": [
+      "Elige una clase (Bardo, Clérigo, Druida, Hechicero, Mago o Brujo). Aprendes dos trucos de esa clase. Además aprendes un conjuro de nivel 1 de esa clase y puedes lanzarlo a su nivel más bajo una vez hasta completar un descanso largo."
+    ]
+  },
+  {
+    "id": "sharpshooter",
+    "name": "Tirador certero / Sharpshooter",
+    "category": "feats",
+    "desc": [
+      "Tus ataques a distancia no sufren desventaja al disparar a largo alcance. Ignoras la cobertura media y tres cuartos. Antes de hacer el ataque de arma a distancia en el que eres competente, puedes decidir restar -5 a la tirada para sumar +10 al daño."
+    ]
+  },
+  {
+    "id": "skill-expert",
+    "name": "Experto en habilidades / Skill Expert",
+    "category": "feats",
+    "desc": [
+      "Aumenta una característica en +1. Gana competencia en una habilidad de tu elección. Obtienes pericia (expertise) en una habilidad en la que ya tengas competencia (duplicas tu bonificador)."
+    ]
+  },
+  {
+    "id": "metamagic-adept",
+    "name": "Adepto metamagia / Metamagic Adept",
+    "category": "feats",
+    "desc": [
+      "Aprendes 2 opciones de Metamagia de la clase hechicero. Obtienes 2 puntos de hechicería para gastar exclusivamente en estas opciones. Recuperas los puntos al terminar descanso largo."
+    ]
+  },
+  {
+    "id": "fighting-initiate",
+    "name": "Adepto marcial superior / Fighting Initiate",
+    "category": "feats",
+    "desc": [
+      "Prerrequisito: Competencia con un arma marcial. Aprendes un Estilo de Combate de tu elección de los disponibles para la clase de guerrero."
+    ]
+  },
+  {
+    "id": "ritual-caster",
+    "name": "Lanzador ritual / Ritual Caster",
+    "category": "feats",
+    "desc": [
+      "Prerrequisito: Inteligencia o Sabiduría 13+. Tienes un libro de rituales con dos conjuros de nivel 1 con etiqueta 'ritual'. Puedes lanzarlos como ritual y transcribir nuevos hechizos que encuentres."
+    ]
+  },
+  {
+    "id": "heavy-armor-master",
+    "name": "Adepto en armaduras pesadas / Heavy Armor Master",
+    "category": "feats",
+    "desc": [
+      "Prerrequisito: Competencia con armadura pesada. Aumenta tu Fuerza +1. Mientras lleves armadura pesada, el daño cortante, perforante y contundente de ataques con armas no mágicas se reduce en 3."
+    ]
+  },
+  {
+    "id": "mounted-combatant",
+    "name": "Combate montado / Mounted Combatant",
+    "category": "feats",
+    "desc": [
+      "Tienes ventaja en ataques cuerpo a cuerpo contra criaturas desmontadas más pequeñas que tu montura. Puedes obligar a ataques a apuntarte a ti en vez de tu montura. Tu montura recibe 0 daño en salvaciones de DES donde recibiría mitad."
+    ]
+  },
+  {
+    "id": "poisoner",
+    "name": "Adepto en venenos / Poisoner",
+    "category": "feats",
+    "desc": [
+      "Ignoras la resistencia al veneno que tengan tus enemigos. Puedes aplicar venenos a armas o munición como acción adicional. Obtienes competencia con kit de envenenador para crear tus propios viales (causan daño extra y condición de envenenado)."
+    ]
+  },
+  {
+    "id": "grappler",
+    "name": "Iniciado en lucha / Grappler",
+    "category": "feats",
+    "desc": [
+      "Prerrequisito: Fuerza 13+. Tienes ventaja al atacar a criaturas que tengas agarradas (grappled). Puedes usar tu acción para intentar apresar (restrain) a la criatura inmovilizándola junto a ti."
+    ]
+  },
+  {
+    "id": "keen-mind",
+    "name": "Adepto en percepción / Keen Mind",
+    "category": "feats",
+    "desc": [
+      "Aumenta Inteligencia +1. Siempre sabes en qué dirección está el norte y cuántas horas faltan para amanecer/anochecer. Puedes recordar con exactitud cualquier cosa vista u oída en el último mes."
+    ]
+  },
+  {
+    "id": "skulker",
+    "name": "Adepto en sigilo / Skulker",
+    "category": "feats",
+    "desc": [
+      "Prerrequisito: Destreza 13+. Puedes intentar esconderte estando ligeramente oculto (luz tenue). Cuando fallas un ataque a distancia oculto no revelas tu posición. La luz tenue no impone desventaja en tiradas de Sabiduría (Percepción)."
+    ]
+  },
+  {
+    "id": "spell-expert",
+    "name": "Lanzador experto / Spell Expert",
+    "category": "features",
+    "desc": [
+      "(Homebrew-like). Mejora la eficiencia mágica. Puedes elegir un truco para lanzarlo como acción adicional y recuperar un uso de habilidad mágica menor en descansos cortos."
+    ]
+  },
+  {
+    "id": "shield-training",
+    "name": "Adepto en escudos pesados / Shield Training",
+    "category": "features",
+    "desc": [
+      "Mejora el uso del escudo en combate. Puedes usar el escudo como arma improvisada competente e intentar empujones con ventaja si el enemigo falló un ataque en ese turno."
+    ]
+  },
+  {
+    "id": "arcane-initiate",
+    "name": "Iniciado arcano / Arcane Initiate",
+    "category": "features",
+    "desc": [
+      "Otorga conexión con la urdimbre. Aprendes un truco de la lista del mago y adquieres competencia con herramientas de calígrafo o suministros de alquimista."
+    ]
+  },
+  {
+    "id": "survivalist",
+    "name": "Experto en supervivencia / Survivalist",
+    "category": "features",
+    "desc": [
+      "Bonificación pasiva. Nunca te pierdes al viajar (excepto magia) y encuentras el doble de alimento y agua al recolectar (foraging) en terrenos hostiles."
+    ]
+  },
+  {
+    "id": "menacing",
+    "name": "Adepto en intimidación / Menacing",
+    "category": "features",
+    "desc": [
+      "Aumenta Carisma +1. Cuando asestas un ataque crítico a una criatura, puedes forzarla a hacer una salvación de Sabiduría o quedará asustada (Frightened) de ti hasta tu próximo turno."
+    ]
+  },
+  {
+    "id": "savage-attacker",
+    "name": "Combatiente brutal / Savage Attacker",
+    "category": "feats",
+    "desc": [
+      "Una vez por turno al realizar una tirada de daño cuerpo a cuerpo, puedes tirar los dados nuevamente y usar el resultado más alto. Asegura golpes devastadores constantes."
+    ]
+  },
+  {
+    "id": "medium-armor-master",
+    "name": "Maestro de armaduras medias / Medium Armor Master",
+    "category": "feats",
+    "desc": [
+      "Prerrequisito: Competencia con armadura media. Usar armadura media no te impone desventaja al Sigilo. El bonificador máximo de Destreza a la CA usando armadura media sube de 2 a 3."
+    ]
+  },
+  {
+    "id": "quick-draw",
+    "name": "Adepto en iniciativa / Quick Draw",
+    "category": "features",
+    "desc": [
+      "Aumentas tu tirada de iniciativa igual a tu modificador de competencia. Puedes desenfundar o guardar un arma cada vez que realices un ataque en tu turno sin gastar interacciones extra."
+    ]
+  },
+  {
+    "id": "iron-will",
+    "name": "Adepto en voluntad / Iron Will",
+    "category": "features",
+    "desc": [
+      "Tus pensamientos no pueden ser leídos por magia sin tu permiso y tienes ventaja en tiradas de salvación contra ser asustado (frightened) o encantado (charmed)."
+    ]
+  },
+  {
+    "id": "lightly-armored",
+    "name": "Adepto en armas ligeras / Lightly Armored",
+    "category": "feats",
+    "desc": [
+      "Otorga competencia con armaduras ligeras. Aumenta tu puntuación de Fuerza o Destreza en 1 (hasta un máximo de 20)."
+    ]
+  },
+  {
+    "id": "moderately-armored",
+    "name": "Moderadamente blindado / Moderately Armored",
+    "category": "feats",
+    "desc": [
+      "Prerrequisito: Competencia con armadura ligera. Obtienes competencia con armaduras medias y escudos. Aumenta tu Fuerza o Destreza en +1."
+    ]
+  },
+  {
+    "id": "heavily-armored",
+    "name": "Fuertemente blindado / Heavily Armored",
+    "category": "feats",
+    "desc": [
+      "Prerrequisito: Competencia con armadura media. Obtienes competencia con armaduras pesadas. Aumenta tu puntuación de Fuerza en +1."
+    ]
+  },
+  {
+    "id": "light-armor-master",
+    "name": "Adepto en armaduras ligeras / Light Armor Master",
+    "category": "features",
+    "desc": [
+      "Mejora el uso de armaduras ligeras. Si te atacan y llevas armadura ligera, puedes usar tu reacción para añadir 1d4 a tu CA en ese ataque (movilidad defensiva)."
+    ]
+  },
+  {
+    "id": "alert-mind",
+    "name": "Experto en percepciones / Alert Mind",
+    "category": "features",
+    "desc": [
+      "Inmunidad natural a ser sorprendido. Tienes un +5 en tiradas de iniciativa pasiva y activa, mejorando tu capacidad de reaccionar rápidamente a emboscadas."
+    ]
+  },
+  {
+    "id": "tactical-fighter",
+    "name": "Maestro de combate táctico / Tactical Fighter",
+    "category": "features",
+    "desc": [
+      "Una vez por turno, tras impactar con un ataque cuerpo a cuerpo, puedes desplazarte 5 pies sin provocar ataques de oportunidad."
+    ]
+  },
+  {
+    "id": "enduring",
+    "name": "Adepto en resistencia / Enduring",
+    "category": "features",
+    "desc": [
+      "Tienes una resistencia corporal inigualable. Cada descanso corto reduce tu nivel de fatiga/agotamiento en 1, y tienes ventaja en salvaciones de Constitución."
+    ]
+  },
+  {
+    "id": "improvised-weapon-master",
+    "name": "Adepto en armas improvisadas / Improvised Weapon Master",
+    "category": "features",
+    "desc": [
+      "Tus ataques con armas improvisadas usan 1d6 de base (o el del objeto si es mayor). Eres competente con cualquier cosa que arrojes o golpees que no sea un arma diseñada."
+    ]
+  },
+  {
+    "id": "focused-caster",
+    "name": "Adepto en concentración / Focused Caster",
+    "category": "features",
+    "desc": [
+      "Mientras estás concentrado en un conjuro, tu CA aumenta en +1 y sufres 1 punto menos de daño por cada ataque de arma que recibas."
+    ]
+  },
+  {
+    "id": "lightning-reflexes",
+    "name": "Adepto en reflejos / Lightning Reflexes",
+    "category": "features",
+    "desc": [
+      "Tienes una velocidad de respuesta sobrehumana. Ganas ventaja en todas las tiradas de salvación de Destreza de fuentes que puedas ver, como trampas y conjuros."
+    ]
   }
 ]
