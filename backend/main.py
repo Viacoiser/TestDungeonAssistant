@@ -44,7 +44,7 @@ async def lifespan(app: FastAPI):
     logger.info("🛑 DungeonAssistant Backend shutting down...")
 
 # Initialize FastAPI app
-app = FastAPI(
+fastapi_app = FastAPI(
     title="DungeonAssistant API",
     description="PWA inteligente para gestión de campañas D&D 5e",
     version="0.1.0",
@@ -52,7 +52,7 @@ app = FastAPI(
 )
 
 # CORS middleware
-app.add_middleware(
+fastapi_app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
@@ -74,7 +74,7 @@ app.add_middleware(
 )
 
 # Health check
-@app.get("/health", tags=["System"])
+@fastapi_app.get("/health", tags=["System"])
 async def health_check():
     """Verificar estado del backend"""
     return {
@@ -84,7 +84,7 @@ async def health_check():
     }
 
 # Root endpoint
-@app.get("/", tags=["System"])
+@fastapi_app.get("/", tags=["System"])
 async def root():
     """Root endpoint"""
     return {
@@ -94,17 +94,17 @@ async def root():
     }
 
 # Include routers
-app.include_router(auth.router)
-app.include_router(campaigns.router)
-app.include_router(player.router)
-app.include_router(sessions.router)
-app.include_router(vision.router)
-app.include_router(gamemaster.router)
-app.include_router(realtime.router)
-app.include_router(assistant.router)
-app.include_router(dnd5e_search.router)
-app.include_router(rag.router)
-app.include_router(voice.router)
+fastapi_app.include_router(auth.router)
+fastapi_app.include_router(campaigns.router)
+fastapi_app.include_router(player.router)
+fastapi_app.include_router(sessions.router)
+fastapi_app.include_router(vision.router)
+fastapi_app.include_router(gamemaster.router)
+fastapi_app.include_router(realtime.router)
+fastapi_app.include_router(assistant.router)
+fastapi_app.include_router(dnd5e_search.router)
+fastapi_app.include_router(rag.router)
+fastapi_app.include_router(voice.router)
 
 # ============================================================================
 # Socket.io State Management
@@ -348,12 +348,13 @@ async def broadcast_message(sid: str, data: dict):
         logger.error(f"❌ Error en broadcast_message: {e}")
 
 # Mount Socket.io app
-socket_app = socketio.ASGIApp(sio, app)
+# Renamed to 'app' so Render can find it as main:app
+app = socketio.ASGIApp(sio, fastapi_app)
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
-        "main:socket_app",
+        "main:app",
         host="0.0.0.0",
         port=8000,
         reload=True,
