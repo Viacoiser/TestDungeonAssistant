@@ -316,7 +316,11 @@ async def regenerate_invitation_code(
         
         logger.info(f"✅ Código regenerado para campaña {campaign_id}: {new_code}")
         
-        return {"new_code": new_code, "message": "Código regenerado exitosamente"}
+        return {
+            "new_code": new_code, 
+            "invite_code": new_code,
+            "message": "Código regenerado exitosamente"
+        }
         
     except HTTPException:
         raise

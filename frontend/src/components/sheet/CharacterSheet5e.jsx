@@ -1,5 +1,7 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react'
-import { X, Edit2, Save, Trash2 } from 'lucide-react'
+import { X, Edit2, Save, Trash2, Sword, Shield, Book, Sparkles, User as UserIcon } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useMediaQuery } from '../../hooks/useMediaQuery'
 import './CharacterSheet5e.css'
 import { normalizeCharacter } from '../../utils/normalizeCharacter'
 import AbilityScores     from './AbilityScores'
@@ -221,10 +223,19 @@ export default function CharacterSheet5e({
   isGM,
   mode = 'modal',
 }) {
+  const isMobile = useMediaQuery('(max-width: 850px)')
+  const [activeTab, setActiveTab] = useState('stats')
   const initialCharacter = useMemo(() => normalizeCharacter(rawCharacter), [rawCharacter])
   const [character, setCharacter] = useState(initialCharacter)
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+
+  const sheetTabs = [
+    { id: 'stats', label: 'Stats', icon: <UserIcon size={16} /> },
+    { id: 'combat', label: 'Combate', icon: <Sword size={16} /> },
+    { id: 'features', label: 'Rasgos', icon: <Sparkles size={16} /> },
+    { id: 'spells', label: 'Hechizos', icon: <Book size={16} /> },
+  ]
 
   // Update local state when prop changes (but only if not editing)
   useEffect(() => {
@@ -332,45 +343,80 @@ export default function CharacterSheet5e({
         isSaving={isSaving}
       />
 
+      {/* Mobile Tabs */}
+      {isMobile && (
+        <div className="cs-mobile-tabs">
+          {sheetTabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`cs-mobile-tab ${activeTab === tab.id ? 'active' : ''}`}
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+              {activeTab === tab.id && (
+                <motion.div layoutId="activeSheetTab" className="cs-mobile-tab-indicator" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Scrollable body */}
       <div className="cs-body">
         {/* Grid with detail panel */}
-        <div style={{ display: 'grid', gridTemplateColumns: selectedItem ? '1fr 380px' : '1fr', gap: '1.5rem', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: (selectedItem && !isMobile) ? '1fr 380px' : '1fr', gap: '1.5rem', alignItems: 'start' }}>
           
-          {/* 3-column grid */}
-          <div className="cs-grid">
+          <AnimatePresence mode="wait">
+            {(!isMobile || activeTab !== 'spells') && (
+              <motion.div 
+                key={isMobile ? activeTab : 'desktop-grid'}
+                initial={isMobile ? { opacity: 0, x: 20 } : {}}
+                animate={isMobile ? { opacity: 1, x: 0 } : {}}
+                exit={isMobile ? { opacity: 0, x: -20 } : {}}
+                transition={{ duration: 0.2 }}
+                className="cs-grid"
+              >
 
-            {/* ── COL LEFT: Stats / Saves / Skills ── */}
-            <div className="cs-col">
-              <AbilityScores character={character} isEditing={isEditing} onEdit={handleEdit} />
-              <SavingThrows  character={character} isEditing={isEditing} onEdit={handleEdit} />
-              <SkillList     character={character} isEditing={isEditing} onEdit={handleEdit} />
-            </div>
+                {/* ── COL LEFT: Stats / Saves / Skills ── */}
+                {(!isMobile || activeTab === 'stats') && (
+                  <div className="cs-col">
+                    <AbilityScores character={character} isEditing={isEditing} onEdit={handleEdit} />
+                    <SavingThrows  character={character} isEditing={isEditing} onEdit={handleEdit} />
+                    <SkillList     character={character} isEditing={isEditing} onEdit={handleEdit} />
+                  </div>
+                )}
 
-            {/* ── COL CENTER: Combat / Attacks / Equipment ── */}
-            <div className="cs-col">
-              <div className="cs-section">
-                <div className="cs-section__header">Combat</div>
-                <div className="cs-section__body">
-                  <CombatStats character={character} isEditing={isEditing} onEdit={handleEdit} />
-                </div>
-              </div>
+                {/* ── COL CENTER: Combat / Attacks / Equipment ── */}
+                {(!isMobile || activeTab === 'combat') && (
+                  <div className="cs-col">
+                    <div className="cs-section">
+                      <div className="cs-section__header">Combat</div>
+                      <div className="cs-section__body">
+                        <CombatStats character={character} isEditing={isEditing} onEdit={handleEdit} />
+                      </div>
+                    </div>
 
-              <AttacksTable   character={character} isEditing={isEditing} onEdit={handleEdit} />
-              <EquipmentPanel character={character} onSelectItem={handleSelectItem} isEditing={isEditing} onEdit={handleEdit} />
-            </div>
+                    <AttacksTable   character={character} isEditing={isEditing} onEdit={handleEdit} />
+                    <EquipmentPanel character={character} onSelectItem={handleSelectItem} isEditing={isEditing} onEdit={handleEdit} />
+                  </div>
+                )}
 
-            {/* ── COL RIGHT: Personality / Features / Backstory ── */}
-            <div className="cs-col">
-              <PersonalityPanel character={character} isEditing={isEditing} onEdit={handleEdit} />
-              <FeaturesPanel    character={character} onSelectItem={handleSelectItem} isEditing={isEditing} onEdit={handleEdit} />
-              <BackstoryPanel   character={character} isEditing={isEditing} onEdit={handleEdit} />
-            </div>
-          </div>
+                {/* ── COL RIGHT: Personality / Features / Backstory ── */}
+                {(!isMobile || activeTab === 'features') && (
+                  <div className="cs-col">
+                    <PersonalityPanel character={character} isEditing={isEditing} onEdit={handleEdit} />
+                    <FeaturesPanel    character={character} onSelectItem={handleSelectItem} isEditing={isEditing} onEdit={handleEdit} />
+                    <BackstoryPanel   character={character} isEditing={isEditing} onEdit={handleEdit} />
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          {/* Detail Panel - Right side */}
+          {/* Detail Panel - Right side (Desktop only or floating in mobile) */}
           {selectedItem && selectedType && (
-            <div style={{ position: 'sticky', top: 0, height: 'fit-content' }}>
+            <div className={isMobile ? 'cs-detail-floating' : 'cs-detail-sticky'}>
               <EncyclopediaDetailPanel
                 item={selectedItem}
                 type={selectedType}
@@ -380,8 +426,16 @@ export default function CharacterSheet5e({
           )}
         </div>
 
-        {/* Spellcasting — full width below grid */}
-        <SpellcastingPanel character={character} onSelectItem={handleSelectItem} isEditing={isEditing} onEdit={handleEdit} />
+        {/* Spellcasting — full width below grid on desktop, or its own tab on mobile */}
+        {(!isMobile || activeTab === 'spells') && (
+          <motion.div
+            initial={isMobile ? { opacity: 0, y: 20 } : {}}
+            animate={isMobile ? { opacity: 1, y: 0 } : {}}
+            className="cs-spells-container"
+          >
+            <SpellcastingPanel character={character} onSelectItem={handleSelectItem} isEditing={isEditing} onEdit={handleEdit} />
+          </motion.div>
+        )}
       </div>
     </div>
   )

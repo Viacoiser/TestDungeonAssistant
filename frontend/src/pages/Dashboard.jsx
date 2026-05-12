@@ -2,11 +2,9 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/useAuthStore'
 import { campaignAPI, characterAPI } from '../services/api'
-import DesktopSidebar from '../components/desktop/Sidebar'
+import DesktopSidebar from '../components/dashboard/Sidebar'
 import BottomNavResponsive from '../components/shared/BottomNavResponsive'
-import CampaignDetailMobile from '../components/mobile/CampaignDetailMobile'
-import CampaignDetailTablet from '../components/tablet/CampaignDetailTablet'
-import CampaignDetailDesktop from '../components/desktop/CampaignDetail'
+
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import LoadingSpinner from '../components/shared/LoadingSpinner'
 import CharacterForm from '../components/shared/CharacterForm'
@@ -20,27 +18,12 @@ import SpellsReference from '../components/shared/SpellsReference'
 import SettingsPanel from '../components/shared/SettingsPanel'
 import useEncyclopediaStore from '../store/useEncyclopediaStore'
 
-const labelStyle = {
-  display: 'block',
-  color: 'rgba(226,209,166,0.8)',
-  fontWeight: 600,
-  fontSize: '0.825rem',
-  marginBottom: '0.5rem',
-  letterSpacing: '0.05em',
-}
-
-const inputStyle = {
-  width: '100%',
-  background: '#1a1a1a', // Solid background to prevent white-on-white issues in dropdowns
-  border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: 10,
-  padding: '0.7rem 1rem',
-  color: '#fff',
-  fontSize: '1rem',
-  outline: 'none',
-  boxSizing: 'border-box',
-  transition: 'border-color 0.2s',
-}
+import { labelStyle, inputStyle, btnStyles } from '../styles/dashboardStyles'
+import CampaignCard from '../components/dashboard/CampaignCard'
+import DashboardModal from '../components/dashboard/DashboardModal'
+import CreateCharacterView from '../components/dashboard/CreateCharacterView'
+import CharacterInspectSplitView from '../components/dashboard/CharacterInspectSplitView'
+import SidebarTabContent from '../components/dashboard/SidebarTabContent'
 import {
   Search,
   Crown,
@@ -89,8 +72,6 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('')
 
   // ── Campaña seleccionada (navegación interna) ─────────────────────────────
-  const [selectedCampaign, setSelectedCampaign] = useState(null)
-  const [selectedUserRole, setSelectedUserRole] = useState('PLAYER')
   const [enteringCampaign, setEnteringCampaign] = useState(null) // id loading
 
   // Detalle de personaje - Split View (characters en sidebar + sheet a la derecha)
@@ -291,24 +272,9 @@ export default function Dashboard() {
   }
 
   // ── Abrir campaña como navegación interna ────────────────────────────────
-  const handleEnterCampaign = async (campaign) => {
+  const handleEnterCampaign = (campaign) => {
     setEnteringCampaign(campaign.id)
-    try {
-      const membersRes = await campaignAPI.getMembers(campaign.id)
-      setSelectedUserRole(membersRes.data?.user_role || 'PLAYER')
-      setSelectedCampaign(campaign)
-    } catch (e) {
-      console.error('Error cargando campaña:', e)
-    } finally {
-      setEnteringCampaign(null)
-    }
-  }
-
-  const handleBackFromCampaign = async () => {
-    // Recargar campañas para reflejar cambios (ej: eliminación)
-    await loadCampaigns()
-    setSelectedCampaign(null)
-    setSelectedUserRole('PLAYER')
+    navigate(`/campaign/${campaign.id}`)
   }
 
   // Quick stats
@@ -337,10 +303,6 @@ export default function Dashboard() {
             setActiveTab(tab)
             setIsCreatingCharacter(false)
             setInspectingCharacter(null)
-            if (selectedCampaign) {
-              setSelectedCampaign(null)
-              setSelectedUserRole('PLAYER')
-            }
           }}
         />
       )}
@@ -353,10 +315,6 @@ export default function Dashboard() {
             setActiveTab(tab)
             setIsCreatingCharacter(false)
             setInspectingCharacter(null)
-            if (selectedCampaign) {
-              setSelectedCampaign(null)
-              setSelectedUserRole('PLAYER')
-            }
           }}
         />
       )}
@@ -374,58 +332,35 @@ export default function Dashboard() {
           minHeight: '44px'
         }} className="px-2 md:px-8 py-0 gap-2 md:gap-4">
 
-          {/* Left Side: Search Bar OR Empty flex space when in campaign */}
-          {selectedCampaign ? (
-            <div style={{ flex: 1 }} />
-          ) : (
-            <div style={{ position: 'relative', flex: '1 1 auto', maxWidth: '180px' }}>
-              <Search size={12} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'rgba(226,209,166,0.35)', pointerEvents: 'none' }} />
-              <input
-                type="text"
-                placeholder="Buscar..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: 8,
-                  height: '28px',
-                  padding: '0 0.5rem 0 1.8rem',
-                  color: 'var(--fantasy-gold)',
-                  fontSize: '0.75rem',
-                  outline: 'none',
-                  width: '100%',
-                }}
-              />
-            </div>
-          )}
+          {/* Left Side: Search Bar */}
+          <div style={{ position: 'relative', flex: '1 1 auto', maxWidth: '180px' }}>
+            <Search size={12} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'rgba(226,209,166,0.35)', pointerEvents: 'none' }} />
+            <input
+              type="text"
+              placeholder="Buscar..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: 8,
+                height: '28px',
+                padding: '0 0.5rem 0 1.8rem',
+                color: 'var(--fantasy-gold)',
+                fontSize: '0.75rem',
+                outline: 'none',
+                width: '100%',
+              }}
+            />
+          </div>
 
-          {/* Center: Campaign Name (Absolute to be perfectly centered) */}
-          {selectedCampaign && (
-            <div style={{
-              position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              width: '60%', pointerEvents: 'none', textAlign: 'center'
-            }} className="lg:hidden">
-              <h2 style={{
-                fontFamily: 'Cinzel, serif', fontSize: '1.1rem', fontWeight: 700, color: '#fff', margin: 0,
-                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                textShadow: '0 2px 10px rgba(0,0,0,0.8)'
-              }}>
-                {selectedCampaign.name}
-              </h2>
-            </div>
-          )}
-
-          {/* Right Side: Logout (Always visible) + "Jugando como" (Only when NOT in campaign) */}
+          {/* Right Side: Logout (Always visible) + "Jugando como" */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, justifyContent: 'flex-end' }} className="flex-shrink-0">
-            {!selectedCampaign && (
-              <div style={{ textAlign: 'right', lineHeight: '1' }} className="hidden xs:block">
-                <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'rgba(226,209,166,0.6)' }}>
-                  Jugando como: <span style={{ fontFamily: 'Cinzel, serif', fontSize: '0.8rem', color: '#ff8a65', letterSpacing: '0.05em', textShadow: '0 0 8px rgba(217,83,30,0.4)' }}>{user?.username || user?.email}</span>
-                </div>
+            <div style={{ textAlign: 'right', lineHeight: '1' }} className="hidden xs:block">
+              <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'rgba(226,209,166,0.6)' }}>
+                Jugando como: <span style={{ fontFamily: 'Cinzel, serif', fontSize: '0.8rem', color: '#ff8a65', letterSpacing: '0.05em', textShadow: '0 0 8px rgba(217,83,30,0.4)' }}>{user?.username || user?.email}</span>
               </div>
-            )}
+            </div>
             <button
               onClick={() => { logout(); navigate('/login'); }}
               style={{
@@ -460,27 +395,7 @@ export default function Dashboard() {
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, var(--fantasy-bg) 0%, transparent 50%, var(--fantasy-bg) 100%)' }} />
           </div>
 
-          {selectedCampaign ? (
-            <>
-            <CampaignDetailMobile
-              campaign={selectedCampaign}
-              userRole={selectedUserRole}
-              onBack={handleBackFromCampaign}
-            />
-            <CampaignDetailTablet
-              campaign={selectedCampaign}
-              userRole={selectedUserRole}
-              onBack={handleBackFromCampaign}
-            />
-            <div className="hidden lg:flex flex-col flex-1 h-full overflow-hidden">
-              <CampaignDetailDesktop
-                campaign={selectedCampaign}
-                userRole={selectedUserRole}
-                onBack={handleBackFromCampaign}
-              />
-            </div>
-          </>
-        ) : isCreatingCharacter ? (
+          {isCreatingCharacter ? (
           <CreateCharacterView
             onBack={() => setIsCreatingCharacter(false)}
             onSubmit={handleCreateCharacterSubmit}
@@ -716,7 +631,7 @@ export default function Dashboard() {
 
         {/* ── Modal: Crear campaña ── */}
         {showCreateModal && (
-          <Modal onClose={() => setShowCreateModal(false)} title="Nueva Campaña">
+          <DashboardModal onClose={() => setShowCreateModal(false)} title="Nueva Campaña">
             <form onSubmit={handleCreateCampaign}>
               <label style={labelStyle}>Nombre de la Campaña *</label>
               <input
@@ -757,12 +672,12 @@ export default function Dashboard() {
                 </button>
               </div>
             </form>
-          </Modal>
+          </DashboardModal>
         )}
 
         {/* ── Modal: Unirse con código ── */}
         {showJoinModal && (
-          <Modal onClose={() => setShowJoinModal(false)} title="Unirse a Campaña">
+          <DashboardModal onClose={() => setShowJoinModal(false)} title="Unirse a Campaña">
             <p style={{ color: 'rgba(226,209,166,0.55)', marginBottom: '1.25rem', lineHeight: 1.6, fontSize: '0.9rem' }}>
               Ingresa el código de invitación que te compartió el Dungeon Master.
             </p>
@@ -803,11 +718,11 @@ export default function Dashboard() {
                 </button>
               </div>
             </form>
-          </Modal>
+          </DashboardModal>
         )}
         {/* ── Modal: Insertar Personaje a Campaña ── */}
         {showInsertCharacterModal && (
-          <Modal onClose={() => setShowInsertCharacterModal(false)} title="Insertar Personaje en Campaña">
+          <DashboardModal onClose={() => setShowInsertCharacterModal(false)} title="Insertar Personaje en Campaña">
             {insertCharacterError && (
               <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '0.75rem', marginBottom: '1rem', color: '#fca5a5', fontSize: '0.875rem' }}>
                 {insertCharacterError}
@@ -945,18 +860,18 @@ export default function Dashboard() {
                 </div>
               </form>
             )}
-          </Modal>
+          </DashboardModal>
         )}
         {/* ── Modal: Crear Personaje ── */}
         {showCreateCharacterModal && (
-          <Modal onClose={() => setShowCreateCharacterModal(false)} title="Crear Personaje">
+          <DashboardModal onClose={() => setShowCreateCharacterModal(false)} title="Crear Personaje">
             {createCharacterError && (
               <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '0.75rem', color: '#fca5a5', marginBottom: '1rem' }}>
                 {createCharacterError}
               </div>
             )}
             <CharacterForm onSubmit={handleCreateCharacterSubmit} loading={creatingCharacter} />
-          </Modal>
+          </DashboardModal>
         )}
 
         {/* ── Modal: Detalle de Personaje ── */}
@@ -967,1004 +882,4 @@ export default function Dashboard() {
   )
 }
 
-/* ── Create Character View ────────────────────────────────────────── */
-function CreateCharacterView({ onBack, onSubmit, loading, error }) {
-  return (
-    <div style={{
-      flex: 1,
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
-      overflow: 'hidden',
-      background: 'transparent',
-    }}>
-      {/* ── Header ─────────────────────────────────────────────── */}
-      <header style={{
-        flexShrink: 0,
-        display: 'flex',
-        alignItems: 'center',
-        gap: '1rem',
-        padding: '1rem 1.75rem',
-        background: 'rgba(0,0,0,0.45)',
-        backdropFilter: 'blur(14px)',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 20,
-      }}>
-        <button
-          onClick={onBack}
-          title="Volver"
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: 36, height: 36, borderRadius: 10,
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            color: 'rgba(226,209,166,0.55)',
-            cursor: 'pointer', transition: 'all 0.18s',
-            flexShrink: 0,
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.1)'
-            e.currentTarget.style.color = 'var(--fantasy-gold)'
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.05)'
-            e.currentTarget.style.color = 'rgba(226,209,166,0.55)'
-          }}
-        >
-          <ChevronLeft size={20} />
-        </button>
-
-        <div style={{ flex: 1 }}>
-          <h2 style={{
-            fontFamily: 'Cinzel, serif',
-            fontSize: '1.25rem', fontWeight: 700,
-            color: '#fff', margin: 0,
-          }}>
-            Crear Nuevo Personaje
-          </h2>
-          <p style={{ fontSize: '0.78rem', color: 'rgba(226,209,166,0.4)', margin: '0.15rem 0 0' }}>
-            Define las estadísticas y el trasfondo de tu héroe
-          </p>
-        </div>
-      </header>
-
-      {/* ── Content ─────────────────────────────────────────────────── */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '2rem 1.75rem' }} className="custom-scrollbar">
-        <div style={{ maxWidth: 880, margin: '0 auto' }}>
-          {error && (
-            <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 12, padding: '1rem', color: '#fca5a5', marginBottom: '1.5rem' }}>
-              {error}
-            </div>
-          )}
-          <CharacterForm onSubmit={onSubmit} loading={loading} />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/* ── Sidebar Tab Content Placeholder ── */
-function SidebarTabContent({ tab, campaigns = [], characters = [], onCreateCharacter, onSelectCharacter, loading, searchQuery, user, onOpenInsertCharacterModal, onCharacterUpdated }) {
-  const tabLabels = {
-    characters: { label: 'Personajes', icon: '🧙' },
-    traits: { label: 'Rasgos', icon: '📜' },
-    equipment: { label: 'Equipamiento y Objetos', icon: '🎒' },
-    monsters: { label: 'Monsters', icon: '👹' },
-    spells: { label: 'Spells', icon: '✨' },
-    dicebox: { label: 'Dado 3D', icon: '🎲' },
-    settings: { label: 'Ajustes', icon: '⚙️' },
-  }
-  const info = tabLabels[tab] || { label: tab, icon: '⭐' }
-
-  if (tab === 'dice') return <DiceRoller />
-  if (tab === 'dicebox') return <DiceBoxRollerResponsive />
-  if (tab === 'traits') return <TraitsReference />
-  if (tab === 'equipment') return <EquipmentReference />
-  if (tab === 'monsters') return <MonstersReference />
-  if (tab === 'spells') return <SpellsReference />
-  if (tab === 'settings') return <SettingsPanel characters={characters} onCharacterUpdated={onCharacterUpdated} />
-
-  // Stats Panel - Show both campaigns and characters stats
-  if (tab === 'stats') {
-    const gmCount = campaigns.filter(c => c.is_owner).length
-    const playerCount = campaigns.filter(c => !c.is_owner).length
-
-    return (
-      <div style={{ padding: '2rem', maxWidth: '800px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-          {/* Campaigns Stats */}
-          <div>
-            <h3 style={{
-              fontFamily: 'Almendra, serif',
-              fontSize: '1.25rem',
-              color: 'var(--fantasy-gold)',
-              marginBottom: '1.5rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}>
-              <BarChart2 size={20} color="var(--fantasy-accent)" />
-              Mis Campañas
-            </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem' }}>
-              <StatCard label="Total Campañas" value={campaigns.length} />
-              <StatCard label="Como GM" value={gmCount} accent />
-              <StatCard label="Como Jugador" value={playerCount} />
-            </div>
-          </div>
-
-          {/* Characters Stats */}
-          <div>
-            <h3 style={{
-              fontFamily: 'Almendra, serif',
-              fontSize: '1.25rem',
-              color: 'var(--fantasy-gold)',
-              marginBottom: '1.5rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}>
-              <Users size={20} color="var(--fantasy-accent)" />
-              Mis Personajes
-            </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem' }}>
-              <StatCard label="Total Personajes" value={characters.length} />
-              <StatCard label="Personajes Vivos" value={characters.filter(c => c.is_alive !== false).length} accent />
-              <StatCard label="Nivel Máximo" value={characters.length > 0 ? Math.max(...characters.map(c => c.level || 1)) : 0} />
-            </div>
-          </div>
-        </div>
-
-        {/* Role Legend */}
-        <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <h4 style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(226,209,166,0.35)', marginBottom: '1rem', fontWeight: 600 }}>
-            Leyenda de Roles
-          </h4>
-          <div style={{ display: 'flex', gap: '2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.8rem', color: 'rgba(226,209,166,0.65)' }}>
-              <Crown size={16} color="#d97706" />
-              <span>Dungeon Master</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.8rem', color: 'rgba(226,209,166,0.65)' }}>
-              <Users size={16} color="rgba(226,209,166,0.5)" />
-              <span>Jugador</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (tab === 'characters') {
-    return (
-      <>
-        {/* Section header similarly styled to Mis Campañas */}
-        <div className="flex flex-col items-center relative mt-8 md:mt-12 mb-8 w-full min-h-[40px]">
-          <div style={{ animation: 'fadeInUp 0.4s ease forwards' }} className="flex flex-col items-center text-center">
-            <h2 style={{
-              fontFamily: 'Almendra, serif',
-              fontStyle: 'normal',
-              fontSize: 'clamp(3rem, 5vw, 2.5rem)', fontWeight: 700,
-              color: 'var(--fantasy-gold)', margin: 0, marginBottom: '0.1rem',
-              textShadow: '0 0 30px rgba(217,83,30,0.2)',
-            }}>
-              Mis Personajes
-            </h2>
-            {/* Decorative divider */}
-            <div className="flex items-center justify-center gap-3 mt-1 mb-2 opacity-80">
-              <div className="h-[1px] w-16 md:w-24 bg-gradient-to-r from-transparent to-[var(--fantasy-gold)]"></div>
-              <div className="text-[var(--fantasy-gold)] text-xs">✧</div>
-              <div className="h-[1px] w-16 md:w-24 bg-gradient-to-l from-transparent to-[var(--fantasy-gold)]"></div>
-            </div>
-            <p style={{ color: 'rgba(226,209,166,0.55)', fontSize: '0.875rem', margin: 0 }} className="hidden sm:block mt-1">
-              Gestiona tus héroes, <strong style={{ color: 'var(--fantasy-gold)' }}>{user?.username || 'Aventurero'}</strong>. La gloria te espera.
-            </p>
-          </div>
-
-          <div className="fixed bottom-[96px] right-4 flex flex-col gap-3 z-40 lg:static lg:w-full lg:flex-row lg:justify-end lg:mt-4 lg:gap-3 lg:z-auto">
-            <button
-              onClick={() => {
-                console.log('Button clicked! Current state:', { campaigns, characters })
-                onOpenInsertCharacterModal()
-              }}
-              className="flex items-center justify-center transition-all h-14 w-14 rounded-full lg:h-10 lg:w-auto lg:rounded-lg lg:px-4 shadow-[0_4px_20px_rgba(217,83,30,0.4)] lg:shadow-none"
-              style={{
-                background: 'rgba(217,83,30,0.9)',
-                border: '1px solid rgba(217,83,30,0.4)',
-                color: '#fff',
-                backdropFilter: 'blur(8px)',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'rgba(217,83,30,1)'
-                e.currentTarget.style.boxShadow = '0 0 25px rgba(217,83,30,0.6)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = 'rgba(217,83,30,0.9)'
-                e.currentTarget.style.boxShadow = '0 4px 20px rgba(217,83,30,0.4)'
-              }}
-            >
-              <Plus size={24} className="lg:mr-2" />
-              <span className="hidden lg:inline font-bold font-serif text-sm">Añadir a Campaña</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Loading */}
-        {loading ? (
-          <LoadingSpinner text="Cargando personajes..." />
-        ) : characters.length === 0 && searchQuery ? (
-          <div style={{ textAlign: 'center', padding: '4rem 0' }}>
-            <p style={{ color: 'rgba(226,209,166,0.4)', fontFamily: 'Cinzel, serif' }}>No se encontraron personajes para «{searchQuery}»</p>
-          </div>
-        ) : characters.length === 0 ? (
-          /* Empty state */
-          <div style={{ textAlign: 'center', padding: '5rem 0', animation: 'fadeInUp 0.4s ease forwards' }}>
-            <div style={{
-              width: 80, height: 80, borderRadius: '50%',
-              border: '2px dashed rgba(217,83,30,0.35)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 1.5rem',
-              color: 'rgba(217,83,30,0.4)',
-              fontSize: '2rem',
-            }}>
-              🧙
-            </div>
-            <h3 style={{ color: '#fff', fontFamily: 'Cinzel, serif', fontSize: '1.4rem', marginBottom: 8 }}>
-              No tienes personajes aún
-            </h3>
-            <p style={{ color: 'rgba(226,209,166,0.45)', marginBottom: '2rem' }}>
-              Crea tu primer héroe para comenzar tu aventura
-            </p>
-            <button onClick={onCreateCharacter} style={btnStyles.primary}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'rgba(226, 209, 166, 0.15)'
-                e.currentTarget.style.boxShadow = '0 0 25px var(--fantasy-gold)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = 'rgba(226, 209, 166, 0.08)'
-                e.currentTarget.style.boxShadow = '0 0 15px var(--fantasy-gold)'
-              }}
-            >
-              Crear Primer Personaje
-            </button>
-          </div>
-        ) : (
-          /* Characters grid */
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-            {characters.map((char, idx) => (
-              <CharacterCard
-                key={char.id}
-                character={char}
-                index={idx}
-                onSelect={() => onSelectCharacter(char)}
-              />
-            ))}
-
-            {/* Add new placeholder */}
-            {!searchQuery && (
-              <button
-                onClick={onCreateCharacter}
-                style={{
-                  border: '2px dashed rgba(255,255,255,0.08)',
-                  borderRadius: 20,
-                  padding: '2rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.75rem',
-                  color: 'rgba(226,209,166,0.2)',
-                  background: 'transparent',
-                  cursor: 'pointer',
-                  minHeight: 220,
-                  transition: 'all 0.2s ease',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = 'rgba(217,83,30,0.3)'
-                  e.currentTarget.style.color = 'rgba(217,83,30,0.5)'
-                  e.currentTarget.style.background = 'rgba(217,83,30,0.04)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
-                  e.currentTarget.style.color = 'rgba(226,209,166,0.2)'
-                  e.currentTarget.style.background = 'transparent'
-                }}
-              >
-                <div style={{
-                  width: 52, height: 52,
-                  borderRadius: '50%',
-                  border: '2px dashed currentColor',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <Plus size={26} />
-                </div>
-                <span style={{ fontFamily: 'Cinzel, serif', fontSize: '0.85rem', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700 }}>
-                  Crear Nuevo Personaje
-                </span>
-              </button>
-            )}
-          </div>
-        )}
-      </>
-    )
-  }
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '6rem 2rem', textAlign: 'center' }}>
-      <div style={{ fontSize: '3.5rem', marginBottom: '1.25rem' }}>{info.icon}</div>
-      <h2 style={{ fontFamily: 'Cinzel, serif', fontSize: '1.6rem', color: '#fff', marginBottom: '0.75rem' }}>{info.label}</h2>
-      <p style={{ color: 'rgba(226,209,166,0.4)', fontSize: '0.95rem', maxWidth: 360 }}>Esta sección está en construcción. Vuelve pronto para descubrir nuevas funcionalidades.</p>
-    </div>
-  )
-}
-
-/* ── Dice Roller ── */
-function DiceRoller() {
-  const [result, setResult] = React.useState(null)
-  const [lastDie, setLastDie] = React.useState(null)
-  const [rolling, setRolling] = React.useState(false)
-  const dice = [4, 6, 8, 10, 12, 20, 100]
-
-  const roll = (sides) => {
-    setRolling(true)
-    setLastDie(sides)
-    setTimeout(() => {
-      setResult(Math.floor(Math.random() * sides) + 1)
-      setRolling(false)
-    }, 350)
-  }
-
-  return (
-    <div style={{ maxWidth: 480, margin: '0 auto', padding: '2rem 0' }}>
-      <h2 style={{ fontFamily: 'Cinzel, serif', fontSize: '1.6rem', color: '#fff', marginBottom: '0.5rem' }}>🎲 Lanzador de Dados</h2>
-      <p style={{ color: 'rgba(226,209,166,0.4)', marginBottom: '2rem', fontSize: '0.9rem' }}>Selecciona un dado para lanzar.</p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '2rem' }}>
-        {dice.map(d => (
-          <button
-            key={d}
-            onClick={() => roll(d)}
-            style={{
-              background: lastDie === d ? 'rgba(217,83,30,0.25)' : 'rgba(255,255,255,0.05)',
-              border: `1px solid ${lastDie === d ? 'rgba(217,83,30,0.6)' : 'rgba(255,255,255,0.1)'}`,
-              color: lastDie === d ? 'var(--fantasy-accent)' : 'var(--fantasy-gold)',
-              borderRadius: 12, padding: '0.75rem 1.1rem',
-              fontFamily: 'Cinzel, serif', fontWeight: 700, fontSize: '1rem',
-              cursor: 'pointer', transition: 'all 0.18s',
-              minWidth: 60, textAlign: 'center',
-            }}
-          >
-            d{d}
-          </button>
-        ))}
-      </div>
-      {result !== null && (
-        <div style={{ textAlign: 'center', animation: 'fadeInUp 0.25s ease' }}>
-          <p style={{ color: 'rgba(226,209,166,0.45)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '0.5rem' }}>
-            {rolling ? 'Lanzando...' : `Resultado — d${lastDie}`}
-          </p>
-          <span style={{
-            fontFamily: 'Cinzel, serif',
-            fontSize: rolling ? '3rem' : '5rem',
-            fontWeight: 900,
-            color: result === lastDie ? '#fbbf24' : result === 1 ? '#f87171' : 'var(--fantasy-gold)',
-            textShadow: result === lastDie ? '0 0 30px rgba(251,191,36,0.5)' : result === 1 ? '0 0 30px rgba(248,113,113,0.4)' : '0 0 20px rgba(217,83,30,0.3)',
-            transition: 'all 0.35s ease',
-            display: 'block',
-            lineHeight: 1,
-          }}>
-            {rolling ? '•••' : result}
-          </span>
-          {!rolling && result === lastDie && <p style={{ color: '#fbbf24', marginTop: '0.5rem', fontWeight: 700, fontFamily: 'Cinzel, serif' }}>✨ CRÍTICO!</p>}
-          {!rolling && result === 1 && <p style={{ color: '#f87171', marginTop: '0.5rem', fontWeight: 700, fontFamily: 'Cinzel, serif' }}>💥 Pifia!</p>}
-        </div>
-      )}
-    </div>
-  )
-}
-
-/* ── Campaign Card ── */
-function CampaignCard({ campaign, isGM, onEnter, index, loading }) {
-  const [hovered, setHovered] = useState(false)
-
-  return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        background: 'rgba(26,26,26,0.65)',
-        backdropFilter: 'blur(16px)',
-        border: `1px solid ${hovered
-          ? isGM ? 'rgba(217,119,6,0.5)' : 'rgba(217,83,30,0.4)'
-          : 'rgba(255,255,255,0.07)'}`,
-        borderRadius: 20,
-        padding: '1.75rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1rem',
-        cursor: 'default',
-        transition: 'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease',
-        transform: hovered ? 'translateY(-6px)' : 'translateY(0)',
-        boxShadow: hovered
-          ? isGM ? '0 12px 40px rgba(217,119,6,0.18)' : '0 12px 40px rgba(217,83,30,0.18)'
-          : '0 4px 20px rgba(0,0,0,0.3)',
-        position: 'relative',
-        overflow: 'hidden',
-        animation: `fadeInUp 0.4s ease ${index * 0.08}s forwards`,
-        opacity: 0,
-      }}
-    >
-      {/* Decorative glow */}
-      <div style={{
-        position: 'absolute', right: -24, top: -24,
-        width: 100, height: 100,
-        background: isGM ? 'rgba(217,119,6,0.07)' : 'rgba(217,83,30,0.06)',
-        borderRadius: '50%',
-        filter: 'blur(24px)',
-        transition: 'opacity 0.3s',
-        opacity: hovered ? 1 : 0,
-      }} />
-
-      {/* Title + role */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', textAlign: 'center' }}>
-        {/* Role Badge Centered */}
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: '0.4rem', 
-          fontSize: '0.65rem', fontWeight: 700, 
-          fontFamily: 'Cinzel, serif',
-          color: isGM ? '#fbbf24' : '#ff8a65', 
-          textTransform: 'uppercase', letterSpacing: '0.15em',
-          background: isGM ? 'rgba(217,119,6,0.15)' : 'rgba(217,83,30,0.15)',
-          border: `1px solid ${isGM ? 'rgba(217,119,6,0.4)' : 'rgba(217,83,30,0.4)'}`,
-          padding: '0.2rem 0.6rem', borderRadius: 20,
-          boxShadow: isGM ? '0 0 10px rgba(217,119,6,0.2)' : '0 0 10px rgba(217,83,30,0.2)'
-        }}>
-          {isGM ? <Crown size={12} /> : <Users size={12} />}
-          <span>{isGM ? 'Dungeon Master' : 'Jugador'}</span>
-        </div>
-
-        <h3 style={{
-          fontFamily: 'Almendra, serif',
-          fontSize: '1.4rem',
-          fontWeight: 700,
-          color: hovered ? 'var(--fantasy-gold)' : '#fff',
-          margin: 0,
-          transition: 'color 0.2s',
-          wordBreak: 'break-word',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-          maxHeight: '3em',
-        }}>
-          {campaign.name.length > 30 ? campaign.name.substring(0, 30) + '...' : campaign.name}
-        </h3>
-      </div>
-
-      {/* Description */}
-      <p style={{
-        fontFamily: 'Almendra, serif',
-        color: 'rgba(226,209,166,0.65)',
-        fontSize: '0.95rem',
-        margin: '0 auto',
-        lineHeight: 1.5,
-        textAlign: 'center',
-        display: '-webkit-box',
-        WebkitLineClamp: 2,
-        WebkitBoxOrient: 'vertical',
-        overflow: 'hidden',
-        minHeight: 45,
-      }}>
-        {campaign.description || 'Una campaña sin descripción aguarda por ti...'}
-      </p>
-
-      {/* Divider info */}
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1rem', display: 'flex', justifyContent: 'space-around', alignItems: 'center', gap: '0.5rem', textAlign: 'center' }}>
-        <div>
-          <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(226,209,166,0.3)', marginBottom: 4 }}>Estado</div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: '0.75rem', color: 'rgba(226,209,166,0.65)' }}>
-            <Clock size={11} />
-            <span>Activa</span>
-          </div>
-        </div>
-        <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.06)' }}></div>
-        <div>
-          <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(226,209,166,0.3)', marginBottom: 4 }}>Código</div>
-          <div style={{ fontSize: '0.75rem', color: 'rgba(226,209,166,0.65)', fontFamily: 'monospace', letterSpacing: '0.1em' }}>
-            {campaign.invite_code || '—'}
-          </div>
-        </div>
-      </div>
-
-      {/* CTA */}
-      <button
-        onClick={onEnter}
-        disabled={loading}
-        style={{
-          fontFamily: 'Almendra, serif',
-          width: '100%',
-          background: loading
-            ? 'rgba(255,255,255,0.05)'
-            : isGM
-              ? 'linear-gradient(135deg, #664c1cff, #c9873cff), var(--fantasy-gold)'
-              : 'linear-gradient(135deg, rgba(182, 78, 37, 0.8), var(--fantasy-accent))',
-          color: loading ? 'rgba(226,209,166,0.4)' : '#fff',
-          border: loading ? '1px solid rgba(255,255,255,0.08)' : 'none',
-          borderRadius: 12,
-          padding: '0.7rem',
-          fontWeight: 800,
-          cursor: loading ? 'not-allowed' : 'pointer',
-          fontSize: '0.85rem',
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-          transition: 'all 0.25s',
-          boxShadow: loading ? 'none' : isGM ? '0 4px 16px rgba(217,119,6,0.25)' : '0 5px 16px var(--fantasy-accent-glow)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem',
-        }}
-        onMouseEnter={e => { if (!loading) e.currentTarget.style.opacity = '0.85' }}
-        onMouseLeave={e => { if (!loading) e.currentTarget.style.opacity = '1' }}
-      >
-        {loading ? (
-          <>
-            <svg
-              width={18} height={18}
-              viewBox="0 0 100 100"
-              style={{ animation: 'spin 1.4s linear infinite', flexShrink: 0 }}
-              fill="none"
-            >
-              <path d="M 50 8 A 42 42 0 1 1 18 68" stroke="var(--fantasy-gold)" strokeWidth="10" strokeLinecap="round" opacity="0.7" />
-              <circle cx="50" cy="50" r="9" fill="var(--fantasy-gold)" opacity="0.7" />
-            </svg>
-            Entrando...
-          </>
-        ) : (
-          isGM ? 'Gestionar Campaña' : 'Entrar a Campaña'
-        )}
-      </button>
-    </div>
-  )
-}
-
-/* ── Quick Stats Card ── */
-function StatCard({ label, value, accent }) {
-  return (
-    <div style={{
-      background: 'rgba(255,255,255,0.04)',
-      border: '1px solid rgba(255,255,255,0.06)',
-      borderRadius: 12,
-      padding: '1.25rem 0.75rem',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '0.35rem',
-      transition: 'all 0.2s ease',
-    }}>
-      <span style={{
-        fontSize: '0.65rem',
-        color: 'rgba(226,209,166,0.35)',
-        textTransform: 'uppercase',
-        letterSpacing: '0.12em',
-        fontWeight: 600,
-        textAlign: 'center'
-      }}>
-        {label}
-      </span>
-      <span style={{
-        fontFamily: 'Cinzel, serif',
-        fontSize: '1.75rem',
-        fontWeight: 900,
-        color: accent ? 'var(--fantasy-accent)' : 'var(--fantasy-gold)',
-        textShadow: accent ? '0 0 15px rgba(217,83,30,0.3)' : '0 0 15px rgba(226,209,166,0.1)',
-        lineHeight: 1,
-      }}>
-        {value}
-      </span>
-    </div>
-  )
-}
-
-/* ── Modal wrapper ── */
-function Modal({ onClose, title, children }) {
-  return (
-    <div
-      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
-      style={{
-        position: 'fixed', inset: 0,
-        background: 'rgba(0,0,0,0.7)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        zIndex: 200,
-        backdropFilter: 'blur(6px)',
-        padding: '1rem',
-      }}
-    >
-      <div style={{
-        background: 'linear-gradient(160deg, #181818, #0d0d0d)',
-        border: '1px solid rgba(217,83,30,0.25)',
-        borderRadius: 22,
-        padding: '2rem',
-        width: '100%',
-        maxWidth: 600,
-        maxHeight: '85vh',
-        overflowY: 'auto',
-        animation: 'fadeInScale 0.22s ease forwards',
-        boxShadow: '0 30px 70px rgba(0,0,0,0.6), 0 0 40px rgba(217,83,30,0.08)',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', position: 'sticky', top: 0, background: 'linear-gradient(160deg, #181818, #0d0d0d)', zIndex: 10 }}>
-          <h2 style={{ color: '#fff', fontFamily: 'Cinzel, serif', fontWeight: 800, fontSize: '1.3rem', margin: 0 }}>{title}</h2>
-          <button
-            onClick={onClose}
-            style={{ background: 'none', border: 'none', color: 'rgba(226,209,166,0.4)', cursor: 'pointer', fontSize: '1.2rem', lineHeight: 1, padding: 4, borderRadius: 6, transition: 'color 0.15s', flexShrink: 0 }}
-            onMouseEnter={e => e.currentTarget.style.color = 'var(--fantasy-gold)'}
-            onMouseLeave={e => e.currentTarget.style.color = 'rgba(226,209,166,0.4)'}
-          >✕</button>
-        </div>
-        {children}
-      </div>
-    </div>
-  )
-}
-
-/* ── Shared styles ── */
-const btnStyles = {
-  primary: {
-    fontFamily: 'Almendra, serif',
-    background: 'rgba(226, 209, 166, 0.08)',
-    color: 'var(--fantasy-gold)',
-    border: '1px solid var(--fantasy-gold)',
-    borderRadius: 12,
-    padding: '0.65rem 1.25rem',
-    fontWeight: 700, cursor: 'pointer', fontSize: '1rem',
-    display: 'flex', alignItems: 'center', gap: '0.5rem',
-    transition: 'all 0.2s',
-    boxShadow: '0 0 15px var(--fantasy-accent-glow)',
-    letterSpacing: '0.04em',
-    textTransform: 'uppercase',
-  },
-  secondary: {
-    fontFamily: 'Almendra, serif',
-    background: 'rgba(255,255,255,0.04)',
-    color: 'var(--fantasy-gold)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: 12,
-    padding: '0.65rem 1.25rem',
-    fontWeight: 700, cursor: 'pointer', fontSize: '1rem',
-    display: 'flex', alignItems: 'center', gap: '0.5rem',
-    transition: 'background 0.2s',
-    letterSpacing: '0.04em',
-    textTransform: 'uppercase',
-  },
-  accent: {
-    background: 'linear-gradient(135deg, rgb(181, 133, 46), #c9873cff)',
-    color: '#fff', border: 'none', borderRadius: 12,
-    padding: '0.65rem 1.25rem', fontWeight: 700, cursor: 'pointer', fontSize: '0.875rem', flex: 1,
-    transition: 'opacity 0.2s',
-  },
-  ghost: {
-    background: 'rgba(255,255,255,0.05)',
-    color: 'rgba(226,209,166,0.55)',
-    border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: 12,
-    padding: '0.65rem 1.25rem', fontWeight: 600, cursor: 'pointer', fontSize: '0.875rem', flex: 1,
-    transition: 'background 0.2s',
-  },
-}
-
-/* ── Character Inspect Split View ── */
-function CharacterInspectSplitView({ inspectingCharacter, characters, onClose, onSelectCharacter, onUpdate }) {
-  return (
-    <div style={{
-      display: 'flex',
-      width: '100%',
-      height: '100%',
-      flex: 1,
-      background: 'var(--fantasy-bg)',
-      fontFamily: 'monospace, monospace',
-      overflow: 'hidden',
-      flexDirection: 'row',
-    }}>
-      <style>{`
-        @keyframes slideInLeft {
-          from {
-            opacity: 0;
-            transform: translateX(-40px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-        .character-sidebar-card {
-          animation: slideInLeft 0.5s ease forwards;
-        }
-        @media (max-width: 768px) {
-          .character-sidebar {
-            display: none !important;
-          }
-          .character-content {
-            width: 100% !important;
-            max-height: calc(100vh - 80px) !important;
-            overflow-y: auto !important;
-          }
-          .character-back-button {
-            display: block !important;
-          }
-        }
-      `}</style>
-
-      {/* ── Left Sidebar: Character List (desktop only) ── */}
-      <aside className="character-sidebar" style={{
-        width: 300,
-        borderRight: '1px solid rgba(217,83,30,0.2)',
-        overflowY: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.95rem',
-        padding: '1.5rem',
-      }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {characters.map((char, idx) => (
-            <div
-              key={char.id}
-              className="character-sidebar-card"
-              style={{
-                animationDelay: `${idx * 50}ms`,
-              }}
-            >
-              <button
-                onClick={() => onSelectCharacter(char)}
-                style={{
-                  width: '100%',
-                  background: 'rgba(26,26,26,0.65)',
-                  backdropFilter: 'blur(16px)',
-                  border: inspectingCharacter.id === char.id
-                    ? '1px solid rgba(217,83,30,0.4)'
-                    : '1px solid rgba(255,255,255,0.07)',
-                  borderRadius: 20,
-                  padding: '0.75rem',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  transition: 'all 0.25s ease',
-                  boxShadow: inspectingCharacter.id === char.id
-                    ? '0 12px 40px rgba(217,83,30,0.18)'
-                    : '0 4px 20px rgba(0,0,0,0.3)',
-                }}
-                onMouseEnter={e => {
-                  if (inspectingCharacter.id !== char.id) {
-                    e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.4)'
-                    e.currentTarget.style.borderColor = 'rgba(217,83,30,0.3)'
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (inspectingCharacter.id !== char.id) {
-                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)'
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'
-                  }
-                }}
-              >
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  marginBottom: '0.75rem',
-                }}>
-                  <div style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 10,
-                    background: 'rgba(217,83,30,0.15)',
-                    border: '1px solid rgba(217,83,30,0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontFamily: 'Almendra, serif',
-                    fontSize: '1.1rem',
-                    fontWeight: 900,
-                    color: '#fbbf24',
-                    textShadow: '0 0 10px rgba(217,83,30,0.5)',
-                    flexShrink: 0,
-                    overflow: 'hidden',
-                  }}>
-                    {char.image_url ? (
-                      <img
-                        src={char.image_url}
-                        alt={char.name}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                        }}
-                      />
-                    ) : (
-                      char.name?.[0]?.toUpperCase() || '?'
-                    )}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{
-                      color: inspectingCharacter.id === char.id ? '#ffffff' : '#fff',
-                      fontWeight: 700,
-                      fontSize: '0.95rem',
-                      margin: 0,
-                      fontFamily: 'Almendra, serif',
-                    }}>
-                      {char.name}
-                    </div>
-                    <div style={{
-                      fontSize: '0.65rem',
-                      color: 'rgba(226,209,166,0.5)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                      margin: 0,
-                    }}>
-                      Nivel {char.level} • {char.race} • <span style={{ color: '#f87171', fontWeight: 900 }}>{char.hp_current}/{char.hp_max}</span> HP
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{
-                  borderTop: '1px solid rgba(255,255,255,0.06)',
-                  paddingTop: '0.5rem',
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(3, 1fr)',
-                  gap: '0.4rem',
-                }}>
-                  {/* Row 1 */}
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{
-                      fontSize: '0.75rem',
-                      color: '#ccccc9',
-                      fontWeight: 700,
-                      fontFamily: 'monospace',
-                    }}>
-                      {char.armor_class || 10}
-                    </div>
-                    <div style={{
-                      fontSize: '0.55rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                      color: 'rgba(226,209,166,0.5)',
-                    }}>Armor Class</div>
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{
-                      fontSize: '0.75rem',
-                      color: '#60a5fa',
-                      fontWeight: 700,
-                      fontFamily: 'monospace',
-                      marginBottom: 3,
-                    }}>
-                      {char.initiative !== undefined ? (char.initiative >= 0 ? '+' : '') + char.initiative : '+0'}
-                    </div>
-                    <div style={{
-                      fontSize: '0.55rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                      color: 'rgba(226,209,166,0.5)',
-                    }}>Initiative</div>
-                  </div>
-
-                  {/* Row 2 */}
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{
-                      fontSize: '0.75rem',
-                      color: '#22c55e',
-                      fontWeight: 700,
-                      fontFamily: 'monospace',
-                      marginBottom: 3,
-                    }}>
-                      {char.speed || 30}
-                    </div>
-                    <div style={{
-                      fontSize: '0.55rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                      color: 'rgba(226,209,166,0.5)',
-                    }}>Speed</div>
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{
-                      fontSize: '0.75rem',
-                      color: '#8324ef',
-                      fontWeight: 700,
-                      fontFamily: 'monospace',
-                      marginBottom: 3,
-                    }}>
-                      {char.passive_perception || 10}
-                    </div>
-                    <div style={{
-                      fontSize: '0.55rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                      color: 'rgba(226,209,166,0.5)',
-                    }}>P.Perception</div>
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{
-                      fontSize: '0.75rem',
-                      color: '#ffb700',
-                      fontWeight: 700,
-                      fontFamily: 'monospace',
-                      marginBottom: 3,
-                    }}>
-                      +{char.proficiency_bonus || 2}
-                    </div>
-                    <div style={{
-                      fontSize: '0.55rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                      color: 'rgba(226,209,166,0.5)',
-                    }}>P. Bonus</div>
-                  </div>
-
-                  {/* Row 3 */}
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{
-                      fontSize: '0.75rem',
-                      color: '#f87171',
-                      fontWeight: 700,
-                      fontFamily: 'monospace',
-                      marginBottom: 3,
-                    }}>
-                      d{char.hit_dice_size || 6}
-                    </div>
-                    <div style={{
-                      fontSize: '0.55rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                      color: 'rgba(226,209,166,0.5)',
-                    }}>Hit Dice</div>
-                  </div>
-                </div>
-              </button>
-            </div>
-          ))}
-        </div>
-      </aside>
-
-      {/* ── Right Content: Character Inspect ── */}
-      <div className="character-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
-        {/* Mobile Back Button */}
-        <div className="character-back-button" style={{
-          display: 'none',
-          position: 'absolute',
-          top: '1rem',
-          right: '1rem',
-          zIndex: 100,
-        }}>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'rgba(217,83,30,0.8)',
-              border: 'none',
-              color: '#fff',
-              padding: '0.5rem 1rem',
-              borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(217,83,30,1)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(217,83,30,0.8)'}
-          >
-            ← Volver
-          </button>
-        </div>
-
-        <CharacterInspect
-          character={inspectingCharacter}
-          mode="split-view"
-          onClose={onClose}
-          onUpdate={onUpdate}
-          isGM={true}
-        />
-      </div>
-    </div>
-  )
-}
 

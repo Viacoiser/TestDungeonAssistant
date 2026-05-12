@@ -37,6 +37,8 @@ function App() {
             console.log('Token inválido, limpiando sesión')
             localStorage.removeItem('auth_token')
             localStorage.removeItem('auth_user')
+            const { logout } = useAuthStore.getState()
+            logout()
           }
         }
       } catch (error) {
