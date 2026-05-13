@@ -82,6 +82,10 @@ export default function Login() {
         setUser(user)
         setToken(access_token)
 
+        // Inicializar socket con el nuevo token
+        const { initSocket } = await import('../services/socket')
+        initSocket()
+
         setTimeout(() => navigate('/dashboard'), 300)
       } catch (err) {
         const errorMsg = err.response?.data?.detail || 'Error al iniciar sesión'
